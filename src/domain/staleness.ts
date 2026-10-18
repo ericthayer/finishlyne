@@ -22,6 +22,65 @@ export const DEFAULT_STALE_THRESHOLDS: Readonly<StaleThresholds> = {
   ideaStaleDays: 30,
 };
 
+/** Keys in the order Settings shows them. */
+export const STALE_THRESHOLD_KEYS = [
+  'activeStaleDays',
+  'activeColdDays',
+  'readyStaleDays',
+  'readyColdDays',
+  'pausedColdDays',
+  'ideaStaleDays',
+] as const satisfies readonly (keyof StaleThresholds)[];
+
+export const STALE_DAYS_MIN = 1;
+export const STALE_DAYS_MAX = 365;
+
+const isDays = (v: unknown): v is number =>
+  typeof v === 'number' && Number.isInteger(v) && v >= STALE_DAYS_MIN && v <= STALE_DAYS_MAX;
+
+/** Saved thresholds (the user_settings jsonb) over the defaults. Bad or missing values fall back per key. */
+export function readStaleThresholds(saved: unknown): StaleThresholds {
+  const t: StaleThresholds = { ...DEFAULT_STALE_THRESHOLDS };
+  if (typeof saved !== 'object' || saved === null) return t;
+  const raw = saved as Record<string, unknown>;
+  for (const key of STALE_THRESHOLD_KEYS) {
+    const v = raw[key];
+    if (isDays(v)) t[key] = v;
+  }
+  // A stale tier at or past its cold tier would never show; keep the pair at the defaults instead.
+  if (t.activeStaleDays >= t.activeColdDays) {
+    t.activeStaleDays = DEFAULT_STALE_THRESHOLDS.activeStaleDays;
+    t.activeColdDays = DEFAULT_STALE_THRESHOLDS.activeColdDays;
+  }
+  if (t.readyStaleDays >= t.readyColdDays) {
+    t.readyStaleDays = DEFAULT_STALE_THRESHOLDS.readyStaleDays;
+    t.readyColdDays = DEFAULT_STALE_THRESHOLDS.readyColdDays;
+  }
+  return t;
+}
+
+export type StaleThresholdsInput = Readonly<Record<keyof StaleThresholds, string>>;
+
+/** Checks form text. Either the parsed thresholds or the first field that is wrong, with a message. */
+export function parseStaleThresholds(
+  input: StaleThresholdsInput,
+): { ok: true; value: StaleThresholds } | { ok: false; key: keyof StaleThresholds; message: string } {
+  const value = { ...DEFAULT_STALE_THRESHOLDS };
+  for (const key of STALE_THRESHOLD_KEYS) {
+    const text = input[key].trim();
+    const n = /^\d+$/.test(text) ? Number(text) : Number.NaN;
+    if (!isDays(n)) return { ok: false, key, message: `Use a whole number of days from ${STALE_DAYS_MIN} to ${STALE_DAYS_MAX}.` };
+    value[key] = n;
+  }
+  if (value.activeColdDays <= value.activeStaleDays) {
+    return { ok: false, key: 'activeColdDays', message: 'Cold has to come after stale.' };
+  }
+  if (value.readyColdDays <= value.readyStaleDays) {
+    return { ok: false, key: 'readyColdDays', message: 'Cold has to come after stale.' };
+  }
+  return { ok: true, value };
+}
+
 /** Moves offered inline on the Overview's "Needs a decision" lane. */
 export type StaleMove = 'resume' | 'pause' | 'archive' | 'activate' | 'demote' | 'promote' | 'review';
 

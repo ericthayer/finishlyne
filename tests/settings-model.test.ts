@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { toProfile } from '../src/data/profile.ts';
-import { buildSettings, githubConnection } from '../src/state/settings-model.ts';
+import { buildProfile, githubConnection } from '../src/state/settings-model.ts';
 import type { ProjectStatus } from '../src/domain/types.ts';
 import { project } from './fixtures.ts';
 
@@ -12,25 +12,10 @@ const listing = (status: ProjectStatus, lastProgressAt = '2026-10-01T12:00:00Z')
 });
 const PROFILE = { name: 'Eric Thayer', login: 'ericthayer', avatarUrl: null, since: '2026-10-10T08:00:00Z' };
 
-describe('buildSettings', () => {
-  it('counts projects by state against the cap', () => {
-    const view = buildSettings(PROFILE, [listing('active'), listing('ready'), listing('paused'), listing('shipped'), listing('archived'), listing('idea')], 3, NOW);
-    expect(view.kpis.map((k) => [k.label, k.value, k.unit ?? null, k.meta])).toEqual([
-      ['Active', '1', '/3', '2 open'],
-      ['Shipped', '1', null, '1 archived'],
-      ['Ready or paused', '2', null, '1 ready · 1 paused'],
-      ['Ideas', '1', null, 'in the Inbox'],
-    ]);
-  });
-
-  it('says when the cap is reached', () => {
-    const view = buildSettings(PROFILE, [listing('active'), listing('active')], 2, NOW);
-    expect(view.kpis[0]?.meta).toBe('cap reached');
-  });
-
+describe('buildProfile', () => {
   it('describes the profile with the latest progress', () => {
-    const view = buildSettings(PROFILE, [listing('active', '2026-10-08T12:00:00Z'), listing('idea', '2026-10-02T12:00:00Z')], 3, NOW);
-    expect(view.profile).toEqual({
+    const view = buildProfile(PROFILE, [listing('active', '2026-10-08T12:00:00Z'), listing('idea', '2026-10-02T12:00:00Z')], NOW);
+    expect(view).toEqual({
       name: 'Eric Thayer',
       login: 'ericthayer',
       initial: 'E',
@@ -40,9 +25,8 @@ describe('buildSettings', () => {
     });
   });
 
-  it('leaves out last progress with no projects, and the profile when signed out', () => {
-    expect(buildSettings(PROFILE, [], 3, NOW).profile?.facts).toBe('Using Finishlyne since Oct 10, 2026');
-    expect(buildSettings(null, [], 3, NOW).profile).toBeNull();
+  it('leaves out last progress with no projects', () => {
+    expect(buildProfile(PROFILE, [], NOW).facts).toBe('Using Finishlyne since Oct 10, 2026');
   });
 });
 

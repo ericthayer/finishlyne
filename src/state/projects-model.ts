@@ -1,5 +1,5 @@
 import { platformName } from '../domain/brief.ts';
-import { staleness } from '../domain/staleness.ts';
+import { DEFAULT_STALE_THRESHOLDS, staleness, type StaleThresholds } from '../domain/staleness.ts';
 import { OPEN_STATUSES, type ProjectStatus } from '../domain/types.ts';
 import type { ProjectListing } from '../data/projects.ts';
 import type { ProjectRow, RowAction } from '../ui/components/table.ts';
@@ -29,11 +29,15 @@ export function rowActions(status: ProjectStatus): RowAction[] {
   return ['edit', ...forward, ...(open ? (['archive'] as const) : [])];
 }
 
-export function toProjectRows(listings: readonly ProjectListing[], now: Date): ProjectRow[] {
+export function toProjectRows(
+  listings: readonly ProjectListing[],
+  now: Date,
+  thresholds: StaleThresholds = DEFAULT_STALE_THRESHOLDS,
+): ProjectRow[] {
   return [...listings]
     .sort((a, b) => a.project.name.localeCompare(b.project.name))
     .map(({ project: p, platform, repo }): ProjectRow => {
-      const s = staleness(p, now);
+      const s = staleness(p, now, thresholds);
       return {
         id: p.id,
         actions: rowActions(p.status),

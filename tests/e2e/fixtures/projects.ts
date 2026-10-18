@@ -5,6 +5,7 @@ import '../../../src/ui/components/index.ts';
 import indexHtml from '../../../index.html?raw';
 import type { ProjectListing, ProjectsRepo } from '../../../src/data/projects.ts';
 import { fixtureShell } from './shell.ts';
+import { DEFAULT_STALE_THRESHOLDS } from '../../../src/domain/staleness.ts';
 import { showProjects } from '../../../src/app/projects.ts';
 import { project } from '../../fixtures.ts';
 import type { CaptureInput, CriterionRecord, EditInput, MoveInput, ShipInput } from '../../../src/data/projects.ts';
@@ -40,9 +41,12 @@ const criteria: Record<string, CriterionRecord[]> = {
     { id: 'c2', text: 'Docs written', position: 1, doneAt: null },
   ],
 };
-const repo: Pick<ProjectsRepo, 'listProjects' | 'capture' | 'update' | 'move' | 'archive' | 'listCriteria' | 'ship' | 'loadWipCap'> = {
+const repo: Pick<ProjectsRepo, 'listProjects' | 'capture' | 'update' | 'move' | 'archive' | 'listCriteria' | 'ship' | 'loadWipCap' | 'loadStaleThresholds'> = {
   async loadWipCap() {
     return Number(params.get('cap') ?? 3);
+  },
+  async loadStaleThresholds() {
+    return DEFAULT_STALE_THRESHOLDS;
   },
   async listCriteria(id: string) {
     return criteria[id] ?? [];

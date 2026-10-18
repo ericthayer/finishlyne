@@ -1,6 +1,7 @@
 import type { CaptureInput, EditInput, Idea, MoveInput, ProjectsRepo, PromoteInput, ShipInput } from '../../../src/data/projects.ts';
 import { slugify, uniqueSlug } from '../../../src/domain/slug.ts';
 import type { Project } from '../../../src/domain/types.ts';
+import { DEFAULT_STALE_THRESHOLDS, type StaleThresholds } from '../../../src/domain/staleness.ts';
 import { project } from '../../fixtures.ts';
 
 /** In-memory ProjectsRepo for fixture pages. `?fail=archive` makes archive answer like the server would. */
@@ -8,6 +9,7 @@ export function memoryRepo(seed: Idea[], fail: string | null): ProjectsRepo {
   const ideas = [...seed];
   let n = 0;
   let wipCap = 3;
+  let thresholds: StaleThresholds = { ...DEFAULT_STALE_THRESHOLDS };
   return {
     async loadWipCap() {
       return wipCap;
@@ -15,6 +17,13 @@ export function memoryRepo(seed: Idea[], fail: string | null): ProjectsRepo {
     async saveWipCap(cap: number) {
       if (fail === 'settings') throw new Error('Network down');
       wipCap = cap;
+    },
+    async loadStaleThresholds() {
+      return thresholds;
+    },
+    async saveStaleThresholds(t: StaleThresholds) {
+      if (fail === 'settings') throw new Error('Network down');
+      thresholds = t;
     },
     async listIdeas() {
       if (fail === 'list') throw new Error('Network down');

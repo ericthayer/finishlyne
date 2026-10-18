@@ -1,6 +1,7 @@
 import type { ProjectListing, ProjectsRepo } from '../data/projects.ts';
 import { explainGate } from '../domain/gates.ts';
 import { checkTransition, defaultReviewOn, DEFAULT_WIP_CAP } from '../domain/lifecycle.ts';
+import { DEFAULT_STALE_THRESHOLDS, type StaleThresholds } from '../domain/staleness.ts';
 import {
   DEFAULT_STATUSES,
   filterProjects,
@@ -22,7 +23,7 @@ export interface ProjectsController {
   refresh(): Promise<void>;
 }
 
-export type ProjectsSource = Pick<ProjectsRepo, 'listProjects' | 'update' | 'move' | 'archive' | 'listCriteria' | 'ship' | 'loadWipCap'>;
+export type ProjectsSource = Pick<ProjectsRepo, 'listProjects' | 'update' | 'move' | 'archive' | 'listCriteria' | 'ship' | 'loadWipCap' | 'loadStaleThresholds'>;
 
 /** The header search, claimed by this screen so it filters in place. */
 export type ClaimSearch = (onQuery: (query: string) => void, initial: string) => void;
@@ -40,13 +41,14 @@ export function showProjects(
   let loaded = false;
   let generation = 0;
   let wipCap = DEFAULT_WIP_CAP;
+  let thresholds: StaleThresholds = DEFAULT_STALE_THRESHOLDS;
 
   const paint = (): void => {
     if (!loaded) return;
     const shown = filterProjects(listings, filter);
     screen.show({
       total: listings.length,
-      rows: toProjectRows(shown, now()),
+      rows: toProjectRows(shown, now(), thresholds),
       filter,
       filtered: shown.length !== listings.length,
     });
@@ -57,10 +59,15 @@ export function showProjects(
     if (!loaded) screen.setLoading();
     try {
       // A failed settings read keeps the last known cap; the database still enforces the real one.
-      const [next, cap] = await Promise.all([repo.listProjects(), repo.loadWipCap().catch(() => wipCap)]);
+      const [next, cap, t] = await Promise.all([
+        repo.listProjects(),
+        repo.loadWipCap().catch(() => wipCap),
+        repo.loadStaleThresholds().catch(() => thresholds),
+      ]);
       if (mine !== generation || !main.contains(screen.root)) return;
       listings = next;
       wipCap = cap;
+      thresholds = t;
       loaded = true;
       paint();
     } catch (error) {

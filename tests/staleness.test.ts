@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { needsDecision, staleness } from '../src/domain/index.ts';
+import { DEFAULT_STALE_THRESHOLDS, needsDecision, parseStaleThresholds, readStaleThresholds, staleness } from '../src/domain/index.ts';
 import { project } from './fixtures.ts';
 
 const now = new Date('2026-10-31T09:00:00Z');
@@ -58,5 +58,44 @@ describe('staleness', () => {
     const p = project({ status: 'active', lastProgressAt: '2026-10-28T00:00:00Z' });
     const t = { activeStaleDays: 2, activeColdDays: 5, readyStaleDays: 14, readyColdDays: 30, pausedColdDays: 30, ideaStaleDays: 30 };
     expect(staleness(p, now, t).level).toBe('stale');
+  });
+});
+
+describe('stale thresholds', () => {
+  const now = new Date('2026-10-26T12:00:00Z');
+  const input = (over: Partial<Record<keyof typeof DEFAULT_STALE_THRESHOLDS, string>> = {}) => ({
+    activeStaleDays: '7',
+    activeColdDays: '21',
+    readyStaleDays: '14',
+    readyColdDays: '30',
+    pausedColdDays: '30',
+    ideaStaleDays: '30',
+    ...over,
+  });
+
+  it('grades with saved thresholds instead of the defaults', () => {
+    const p = project({ status: 'active', lastProgressAt: '2026-10-22T00:00:00Z' });
+    expect(staleness(p, now).level).toBe('fresh');
+    expect(staleness(p, now, { ...DEFAULT_STALE_THRESHOLDS, activeStaleDays: 3 }).level).toBe('stale');
+  });
+
+  it('reads the saved jsonb over the defaults, per key', () => {
+    expect(readStaleThresholds({})).toEqual(DEFAULT_STALE_THRESHOLDS);
+    expect(readStaleThresholds(null)).toEqual(DEFAULT_STALE_THRESHOLDS);
+    expect(readStaleThresholds({ ideaStaleDays: 45, readyStaleDays: 'x', pausedColdDays: 0 })).toEqual({
+      ...DEFAULT_STALE_THRESHOLDS,
+      ideaStaleDays: 45,
+    });
+  });
+
+  it('drops a saved pair whose cold tier is not after stale', () => {
+    expect(readStaleThresholds({ activeStaleDays: 30, activeColdDays: 10 })).toEqual(DEFAULT_STALE_THRESHOLDS);
+  });
+
+  it('parses form text and names the first wrong field', () => {
+    expect(parseStaleThresholds(input({ activeStaleDays: ' 5 ' }))).toEqual({ ok: true, value: { ...DEFAULT_STALE_THRESHOLDS, activeStaleDays: 5 } });
+    expect(parseStaleThresholds(input({ readyStaleDays: '2.5' }))).toMatchObject({ ok: false, key: 'readyStaleDays' });
+    expect(parseStaleThresholds(input({ ideaStaleDays: '400' }))).toMatchObject({ ok: false, key: 'ideaStaleDays' });
+    expect(parseStaleThresholds(input({ activeColdDays: '7' }))).toEqual({ ok: false, key: 'activeColdDays', message: 'Cold has to come after stale.' });
   });
 });

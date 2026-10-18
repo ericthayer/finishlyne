@@ -1,7 +1,20 @@
 import { el } from '../components/dom.ts';
-import type { ConnectionView, ProfileView, SettingsKpi } from '../../state/settings-model.ts';
+import type { ConnectionView, ProfileView } from '../../state/settings-model.ts';
 
-// The top of Settings: who you are, how your projects stand, and what is connected.
+// Settings building blocks: a titled panel, who you are, and what is connected.
+
+/** A Settings card: title in the shared panel head, an optional muted intro, then content. */
+export function settingsPanel(title: string, id: string, intro?: string): HTMLElement {
+  const section = el('section', 'fl-panel fl-settings__panel');
+  section.setAttribute('aria-labelledby', id);
+  const head = el('div', 'fl-panel__head');
+  const h2 = el('h2', null, title);
+  h2.id = id;
+  head.append(h2);
+  section.append(head);
+  if (intro) section.append(el('p', 'fl-muted fl-settings__intro', intro));
+  return section;
+}
 
 function external(href: string, text: string, className: string): HTMLAnchorElement {
   const a = el('a', className, text);
@@ -38,19 +51,6 @@ export function profilePanel(view: ProfileView): HTMLElement {
   return section;
 }
 
-export function kpiStrip(kpis: readonly SettingsKpi[]): HTMLElement {
-  const section = el('section', 'fl-panel fl-panel--flush fl-kpis');
-  section.setAttribute('aria-label', 'Your projects');
-  const grid = el('div', 'fl-kpis__grid');
-  for (const k of kpis) {
-    const cell = document.createElement('fl-kpi');
-    for (const [name, value] of Object.entries(k)) if (value !== undefined) cell.setAttribute(name, String(value));
-    grid.append(cell);
-  }
-  section.append(grid);
-  return section;
-}
-
 export interface ConnectionsPanel {
   root: HTMLElement;
   setGitHub(view: ConnectionView): void;
@@ -64,10 +64,7 @@ const TONE: Readonly<Record<ConnectionView['kind'], string | null>> = {
 };
 
 export function connectionsPanel(): ConnectionsPanel {
-  const section = el('section', 'fl-panel');
-  section.setAttribute('aria-labelledby', 'h-connections');
-  const h2 = el('h2', null, 'Connections');
-  h2.id = 'h-connections';
+  const section = settingsPanel('Connections', 'h-connections');
   const list = el('ul', 'fl-connections');
   const item = el('li', 'fl-connections__item');
   const name = el('span', 'fl-connections__name', 'GitHub App');
@@ -79,7 +76,7 @@ export function connectionsPanel(): ConnectionsPanel {
   manage.href = '/github';
   item.append(name, status, manage);
   list.append(item);
-  section.append(h2, list);
+  section.append(list);
   return {
     root: section,
     setGitHub(view) {

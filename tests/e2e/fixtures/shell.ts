@@ -2,6 +2,7 @@ import { showDrawer, type DrawerSource } from '../../../src/app/drawer.ts';
 import type { RouteName } from '../../../src/app/router.ts';
 import { mountShell, type Shell } from '../../../src/app/shell.ts';
 import { showIssues } from '../../../src/app/github-issues.ts';
+import { DEFAULT_STALE_THRESHOLDS } from '../../../src/domain/staleness.ts';
 import type { GitHubSource } from '../../../src/data/github.ts';
 import type { CaptureInput, ProjectListing } from '../../../src/data/projects.ts';
 import type { CreateDetail } from '../../../src/ui/components/create-project-dialog.ts';
@@ -54,6 +55,9 @@ export function drawerSource(listings: ProjectListing[]): DrawerSource {
     },
     async loadWipCap() {
       return 3;
+    },
+    async loadStaleThresholds() {
+      return DEFAULT_STALE_THRESHOLDS;
     },
     async update(id, input) {
       const l = listings[at(id)];

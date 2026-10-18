@@ -253,6 +253,20 @@ describe('supabaseProjects settings', () => {
     expect(calls).toEqual(['POST /rest/v1/user_settings?on_conflict=user_id {"wip_cap":4}']);
   });
 
+  it('reads saved stale thresholds over the defaults', async () => {
+    const saved = fakeBackend([{ status: 200, body: { stale_thresholds: { activeStaleDays: 5 } } }]);
+    expect((await supabaseProjects(saved.backend).loadStaleThresholds()).activeStaleDays).toBe(5);
+    const fresh = fakeBackend([{ status: 200, body: null }]);
+    expect((await supabaseProjects(fresh.backend).loadStaleThresholds()).activeStaleDays).toBe(7);
+  });
+
+  it('saves stale thresholds as one upsert on the user', async () => {
+    const { backend, calls } = fakeBackend([{ status: 204, body: null }]);
+    const t = { activeStaleDays: 5, activeColdDays: 21, readyStaleDays: 14, readyColdDays: 30, pausedColdDays: 30, ideaStaleDays: 30 };
+    await supabaseProjects(backend).saveStaleThresholds(t);
+    expect(calls).toEqual([`POST /rest/v1/user_settings?on_conflict=user_id {"stale_thresholds":${JSON.stringify(t)}}`]);
+  });
+
   it('surfaces a rejected cap', async () => {
     const { backend } = fakeBackend([{ status: 400, body: { code: '23514', message: 'check constraint violated' } }]);
     await expect(supabaseProjects(backend).saveWipCap(11)).rejects.toThrow('check constraint');

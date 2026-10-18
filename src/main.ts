@@ -9,6 +9,7 @@ import { startRouter, type Route } from './app/router.ts';
 import { mountShell, type Shell } from './app/shell.ts';
 import { createBackend, readConfig, type Backend } from './data/client.ts';
 import { DEFAULT_WIP_CAP } from './domain/lifecycle.ts';
+import { DEFAULT_STALE_THRESHOLDS } from './domain/staleness.ts';
 import { loadOverview } from './data/overview.ts';
 import { supabaseProjects } from './data/projects.ts';
 import { signInWithGitHub, signOut, watchSession } from './data/session.ts';
@@ -83,9 +84,12 @@ function start(root: HTMLElement, backend: Backend): void {
     try {
       const data = await loadOverview(backend);
       if (current?.name !== 'overview') return;
-      const cap = await repo.loadWipCap().catch(() => DEFAULT_WIP_CAP);
+      const [cap, thresholds] = await Promise.all([
+        repo.loadWipCap().catch(() => DEFAULT_WIP_CAP),
+        repo.loadStaleThresholds().catch(() => DEFAULT_STALE_THRESHOLDS),
+      ]);
       if (current?.name !== 'overview') return;
-      renderOverview(s.main, buildOverview(data, new Date(), cap));
+      renderOverview(s.main, buildOverview(data, new Date(), cap, thresholds));
     } catch (error) {
       renderOverviewError(s.main, error instanceof Error ? error.message : String(error), () => void showOverview(s));
     }

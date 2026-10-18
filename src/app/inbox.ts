@@ -1,4 +1,5 @@
 import type { ProjectsRepo } from '../data/projects.ts';
+import { DEFAULT_STALE_THRESHOLDS } from '../domain/staleness.ts';
 import { buildInbox, type InboxItem } from '../state/inbox-model.ts';
 import { loadDialog } from '../ui/components/lazy.ts';
 import type { ArchiveDetail } from '../ui/components/archive-dialog.ts';
@@ -25,7 +26,11 @@ export function showInbox(main: HTMLElement, repo: ProjectsRepo, now: () => Date
     const mine = ++generation;
     if (!loaded) screen.setLoading();
     try {
-      const model = buildInbox(await repo.listIdeas(), now());
+      const [ideas, thresholds] = await Promise.all([
+        repo.listIdeas(),
+        repo.loadStaleThresholds().catch(() => DEFAULT_STALE_THRESHOLDS),
+      ]);
+      const model = buildInbox(ideas, now(), thresholds);
       if (mine !== generation || !main.contains(screen.capture)) return;
       items = model.items;
       loaded = true;

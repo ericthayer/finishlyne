@@ -12,7 +12,7 @@ async function open(page: Page, query = ''): Promise<void> {
 }
 
 const cap = (page: Page) => page.getByLabel('Active projects at once');
-const status = (page: Page) => page.locator('.fl-settings__status');
+const status = (page: Page) => page.getByRole('region', { name: 'Work in progress' }).locator('.fl-settings__status');
 
 for (const theme of ['dark', 'light'] as const) {
   test(`Settings shows the WIP cap (${theme})`, async ({ page }) => {
@@ -28,14 +28,14 @@ for (const theme of ['dark', 'light'] as const) {
 test('saving a new cap says so', async ({ page }) => {
   await open(page);
   await cap(page).fill('5');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save cap' }).click();
   await expect(status(page)).toHaveText('Saved. Up to 5 projects can be Active at once.');
 });
 
 test('a cap outside 1 to 10 is refused and focused', async ({ page }) => {
   await open(page);
   await cap(page).fill('11');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save cap' }).click();
   await expect(cap(page)).toHaveAttribute('aria-invalid', 'true');
   await expect(cap(page)).toBeFocused();
   await expect(page.getByText('Use a whole number from 1 to 10.')).toBeVisible();
@@ -45,11 +45,11 @@ test('a cap outside 1 to 10 is refused and focused', async ({ page }) => {
 test('a failed save reports the reason', async ({ page }) => {
   await open(page, '?fail=settings');
   await cap(page).fill('4');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save cap' }).click();
   await expect(status(page)).toHaveText("That didn't save. Network down");
 });
 
-test('Settings shows your GitHub profile and how your projects stand', async ({ page }) => {
+test('Settings shows your GitHub profile and the GitHub connection', async ({ page }) => {
   await open(page);
   await expect(page.getByRole('heading', { name: 'Eric Thayer', level: 2 })).toBeVisible();
   await expect(page.getByText('@ericthayer')).toBeVisible();
@@ -57,19 +57,32 @@ test('Settings shows your GitHub profile and how your projects stand', async ({ 
   const link = page.getByRole('link', { name: 'GitHub profile' });
   await expect(link).toHaveAttribute('href', 'https://github.com/ericthayer');
   await expect(link).toHaveAttribute('target', '_blank');
-  const stats = page.getByRole('region', { name: 'Your projects' });
-  await expect(stats.locator('fl-kpi[label="Active"]')).toHaveAttribute('value', '2');
-  await expect(stats.locator('fl-kpi[label="Shipped"]')).toHaveAttribute('meta', '1 archived');
-  await expect(stats.locator('fl-kpi[label="Ready or paused"]')).toHaveAttribute('value', '2');
-  await expect(stats.locator('fl-kpi[label="Ideas"]')).toHaveAttribute('value', '3');
+  await expect(page.locator('fl-kpi')).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Connections' }).getByText('Connected as ericthayer')).toBeVisible();
 });
 
-test('saving a new cap updates the Active stat', async ({ page }) => {
+const stale = (page: Page) => page.getByRole('region', { name: 'Stale and cold' });
+
+test('stale thresholds show the defaults and save new ones', async ({ page }) => {
   await open(page);
-  await cap(page).fill('5');
-  await page.getByRole('button', { name: 'Save' }).click();
-  await expect(page.locator('fl-kpi[label="Active"]')).toHaveAttribute('unit', '/5');
+  const active = stale(page).getByRole('group', { name: 'Active' });
+  await expect(active.getByLabel('Stale after')).toHaveValue('7');
+  await expect(active.getByLabel('Cold after')).toHaveValue('21');
+  await expect(stale(page).getByRole('group', { name: 'Idea' }).getByLabel('Stale after')).toHaveValue('30');
+  await active.getByLabel('Stale after').fill('5');
+  await page.getByRole('button', { name: 'Save thresholds' }).click();
+  await expect(stale(page).locator('.fl-settings__status')).toHaveText('Saved. Staleness now uses these day counts.');
+});
+
+test('cold before stale is refused and focused', async ({ page }) => {
+  await open(page);
+  const ready = stale(page).getByRole('group', { name: 'Ready' });
+  await ready.getByLabel('Cold after').fill('10');
+  await page.getByRole('button', { name: 'Save thresholds' }).click();
+  await expect(ready.getByLabel('Cold after')).toHaveAttribute('aria-invalid', 'true');
+  await expect(ready.getByLabel('Cold after')).toBeFocused();
+  await expect(stale(page).getByText('Cold has to come after stale.')).toBeVisible();
+  await axe(page);
 });
 
 test('without an avatar the initial stands in, and a missing App says so', async ({ page }) => {

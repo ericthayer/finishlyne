@@ -1,6 +1,6 @@
 import { PLATFORM_LABELS } from '../domain/brief.ts';
 import { DEFAULT_WIP_CAP } from '../domain/lifecycle.ts';
-import { staleness } from '../domain/staleness.ts';
+import { DEFAULT_STALE_THRESHOLDS, staleness, type StaleThresholds } from '../domain/staleness.ts';
 import type { Project, ProjectEventPayload } from '../domain/types.ts';
 import type { StageCount } from '../ui/components/charts.ts';
 import type { FeedItem } from '../ui/components/feed.ts';
@@ -77,11 +77,16 @@ export function feedItem(payload: ProjectEventPayload, name: string): Omit<FeedI
   }
 }
 
-export function buildOverview(data: OverviewData, now: Date, cap = DEFAULT_WIP_CAP): OverviewModel {
+export function buildOverview(
+  data: OverviewData,
+  now: Date,
+  cap = DEFAULT_WIP_CAP,
+  thresholds: StaleThresholds = DEFAULT_STALE_THRESHOLDS,
+): OverviewModel {
   const { projects } = data;
   const byId = new Map(projects.map((p) => [p.id, p]));
   const open = projects.filter((p) => p.status !== 'shipped' && p.status !== 'archived');
-  const graded = open.map((p) => ({ p, s: staleness(p, now) }));
+  const graded = open.map((p) => ({ p, s: staleness(p, now, thresholds) }));
   const where = (p: Project): string => {
     const platform = data.platforms.get(p.id);
     return [platform ? PLATFORM_LABELS[platform] : null, data.repos.get(p.id)].filter(Boolean).join(' · ');
