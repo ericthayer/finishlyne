@@ -16,7 +16,12 @@ export interface DrawerController {
 }
 
 /** Fills the side panel and keeps it current. Quick actions write through `repo`. */
-export function showDrawer(host: HTMLElement, repo: DrawerSource, now: () => Date = () => new Date()): DrawerController {
+export function showDrawer(
+  host: HTMLElement,
+  repo: DrawerSource,
+  now: () => Date = () => new Date(),
+  onIssues?: (panel: HTMLElement) => void,
+): DrawerController {
   let listings: ProjectListing[] = [];
   let wipCap = DEFAULT_WIP_CAP;
   let generation = 0;
@@ -79,7 +84,7 @@ export function showDrawer(host: HTMLElement, repo: DrawerSource, now: () => Dat
     }
   };
 
-  const screen = mountDrawer(host, act);
+  const screen = mountDrawer(host, act, onIssues);
 
   screen.edit.addEventListener('fl-project-edit-submit', (event) => {
     const { id, ...input } = (event as CustomEvent<EditDetail>).detail;

@@ -51,7 +51,11 @@ function start(root: HTMLElement, backend: Backend): void {
         m.showActivity(s.main, d.supabaseActivity(backend)),
       );
     }
-    else if (route.name === 'settings') lazy(route, import('./app/settings.ts'), (m, s) => m.showSettings(s.main, repo));
+    else if (route.name === 'settings') {
+      lazy(route, Promise.all([import('./app/settings.ts'), import('./data/github.ts')]), ([m, d], s) =>
+        m.showSettings(s.main, repo, d.supabaseGitHub(backend)),
+      );
+    }
     else renderPlaceholder(shell.main, route.name);
   };
 
@@ -81,6 +85,21 @@ function start(root: HTMLElement, backend: Backend): void {
     }
   };
 
+  // The side panel's Issues tab and its GitHub client load the first time the tab is shown.
+  let issues: Promise<{ refresh(): Promise<void> }> | null = null;
+  const showIssues = (panel: HTMLElement): void => {
+    if (issues) {
+      void issues.then((c) => c.refresh());
+      return;
+    }
+    issues = Promise.all([import('./app/github-issues.ts'), import('./data/github.ts')]).then(([m, d]) =>
+      m.showIssues(panel, d.supabaseGitHub(backend), repo),
+    );
+    issues.catch(() => {
+      issues = null;
+    });
+  };
+
   // Screens with their own controller refresh themselves; the Overview is re-rendered here.
   onChange(() => {
     if (shell && current?.name === 'overview') void showOverview(shell);
@@ -91,6 +110,7 @@ function start(root: HTMLElement, backend: Backend): void {
       unbindCapture?.();
       unbindCapture = null;
       shell = null;
+      issues = null;
       renderSignIn(root, () => signInWithGitHub(backend), state.error);
       return;
     }
@@ -101,7 +121,7 @@ function start(root: HTMLElement, backend: Backend): void {
       signOut: () => void signOut(backend),
       createProject: (detail) => repo.capture(detail),
       onDrawerOpen: (host) => {
-        void import('./app/drawer.ts').then((m) => m.showDrawer(host, repo));
+        void import('./app/drawer.ts').then((m) => m.showDrawer(host, repo, undefined, showIssues));
       },
     });
     const capture = shell.capture;
