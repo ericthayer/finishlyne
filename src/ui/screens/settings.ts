@@ -1,6 +1,8 @@
 import { el } from '../components/dom.ts';
 import { formField, type Field } from '../components/form.ts';
 import { WIP_CAP_MAX, WIP_CAP_MIN } from '../../domain/project-fields.ts';
+import type { ConnectionView, SettingsView } from '../../state/settings-model.ts';
+import { connectionsPanel, kpiStrip, profilePanel } from './settings-profile.ts';
 
 export interface SettingsHandlers {
   onSave(raw: string): void;
@@ -12,6 +14,9 @@ export interface SettingsScreen {
   setLoading(): void;
   setError(message: string): void;
   show(wipCap: number): void;
+  /** Profile and project stats above the settings. */
+  showSummary(view: SettingsView): void;
+  setGitHub(view: ConnectionView): void;
   invalid(message: string | null): void;
   setSaving(saving: boolean): void;
   /** Says what just happened, visibly and to screen readers. */
@@ -36,8 +41,12 @@ export function mountSettings(main: HTMLElement, handlers: SettingsHandlers): Se
   const body = el('div', 'fl-settings__body');
   panel.append(h2, intro, status, body);
 
+  const summary = el('div', 'fl-settings__summary');
+  const connections = connectionsPanel();
+  connections.setGitHub({ kind: 'checking' });
+
   main.setAttribute('aria-labelledby', 'page-title');
-  main.replaceChildren(head, panel);
+  main.replaceChildren(head, summary, connections.root, panel);
   document.title = 'Settings · Finishlyne';
 
   let field: Field | null = null;
@@ -82,6 +91,13 @@ export function mountSettings(main: HTMLElement, handlers: SettingsHandlers): Se
       save = button;
       body.replaceChildren(form);
     },
+    showSummary(view) {
+      const parts: HTMLElement[] = [];
+      if (view.profile) parts.push(profilePanel(view.profile));
+      parts.push(kpiStrip(view.kpis));
+      summary.replaceChildren(...parts);
+    },
+    setGitHub: connections.setGitHub,
     invalid(message) {
       field?.invalid(message ?? null);
       if (message) {

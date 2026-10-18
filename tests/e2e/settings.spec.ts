@@ -48,3 +48,39 @@ test('a failed save reports the reason', async ({ page }) => {
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(status(page)).toHaveText("That didn't save. Network down");
 });
+
+test('Settings shows your GitHub profile and how your projects stand', async ({ page }) => {
+  await open(page);
+  await expect(page.getByRole('heading', { name: 'Eric Thayer', level: 2 })).toBeVisible();
+  await expect(page.getByText('@ericthayer')).toBeVisible();
+  await expect(page.getByText('Using Finishlyne since Oct 10, 2026 · last progress 2 days ago')).toBeVisible();
+  const link = page.getByRole('link', { name: 'GitHub profile' });
+  await expect(link).toHaveAttribute('href', 'https://github.com/ericthayer');
+  await expect(link).toHaveAttribute('target', '_blank');
+  const stats = page.getByRole('region', { name: 'Your projects' });
+  await expect(stats.locator('fl-kpi[label="Active"]')).toHaveAttribute('value', '2');
+  await expect(stats.locator('fl-kpi[label="Shipped"]')).toHaveAttribute('meta', '1 archived');
+  await expect(stats.locator('fl-kpi[label="Ready or paused"]')).toHaveAttribute('value', '2');
+  await expect(stats.locator('fl-kpi[label="Ideas"]')).toHaveAttribute('value', '3');
+  await expect(page.getByRole('region', { name: 'Connections' }).getByText('Connected as ericthayer')).toBeVisible();
+});
+
+test('saving a new cap updates the Active stat', async ({ page }) => {
+  await open(page);
+  await cap(page).fill('5');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.locator('fl-kpi[label="Active"]')).toHaveAttribute('unit', '/5');
+});
+
+test('without an avatar the initial stands in, and a missing App says so', async ({ page }) => {
+  await open(page, '?no-avatar&github=not-installed');
+  await expect(page.locator('span.fl-profile__avatar')).toHaveText('E');
+  await expect(page.getByText('App not installed')).toBeVisible();
+  await axe(page);
+});
+
+test('a GitHub check that fails does not block the page', async ({ page }) => {
+  await open(page, '?github=down');
+  await expect(page.getByText('Could not check')).toBeVisible();
+  await expect(cap(page)).toHaveValue('3');
+});
