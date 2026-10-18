@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.5.0](https://github.com/ericthayer/finishlyne/compare/v0.4.0...v0.5.0) (2026-10-18)
+
+
+### Features
+
+* **design:** phone tab bar, card rows, safe areas, and a vibrant palette with Plus Jakarta Sans ([#30](https://github.com/ericthayer/finishlyne/issues/30)) ([3fd856c](https://github.com/ericthayer/finishlyne/commit/3fd856c0f37c65edb7eda1a6b7703905e15eb61f))
+* **github:** GitHub page with repos, PRs, issues and pushes from the GitHub App ([#27](https://github.com/ericthayer/finishlyne/issues/27)) ([e75d02c](https://github.com/ericthayer/finishlyne/commit/e75d02c548c1880f82def4787e6c6bb0fc2d50e3))
+* **projects:** show a brand mark beside the agent name in the Agent column ([#31](https://github.com/ericthayer/finishlyne/issues/31)) ([8a68913](https://github.com/ericthayer/finishlyne/commit/8a689139e302440768270d43b623b42877135d8c))
+* **projects:** site previews, screenshots and Netlify deploys ([#28](https://github.com/ericthayer/finishlyne/issues/28)) ([32ded31](https://github.com/ericthayer/finishlyne/commit/32ded312e45f4008bf7f50e9267be39806f8fd7f))
+* **settings:** GitHub profile, stale thresholds and connections on Settings ([#29](https://github.com/ericthayer/finishlyne/issues/29)) ([62aa481](https://github.com/ericthayer/finishlyne/commit/62aa4812757d86a372775cf7f02a8df610869f12))
+* **signin:** split-screen sign-in with an animated lane stage ([#32](https://github.com/ericthayer/finishlyne/issues/32)) ([20f86fe](https://github.com/ericthayer/finishlyne/commit/20f86fe3ee750f26a688f072cfc03c1516832e73))
+
+
+### Bug Fixes
+
+* **shell:** make the side panel closable on phones and fix mobile layout issues ([#25](https://github.com/ericthayer/finishlyne/issues/25)) ([6bbd9a5](https://github.com/ericthayer/finishlyne/commit/6bbd9a52b3f7b53748942cf6efd51043253b22e7))
+
 ## [0.4.0](https://github.com/ericthayer/finishlyne/compare/v0.3.0...v0.4.0) (2026-10-11)
 
 
