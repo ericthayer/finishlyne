@@ -17,4 +17,6 @@ export function renderSignIn(host: HTMLElement, onSignIn: () => Promise<string |
   });
   host.replaceChildren(fragment);
   document.title = 'Sign in · Finishlyne';
+  // The stage is decoration; signed-in sessions never load it.
+  void import('../components/lane-field.ts');
 }

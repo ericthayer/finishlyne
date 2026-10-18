@@ -164,3 +164,18 @@ for (const theme of ['dark', 'light'] as const) {
     await axe(page);
   });
 }
+
+test('sign-in sets the card on the stage above the pitch and fits without sideways scrolling', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Continue with GitHub' })).toBeVisible();
+  const stage = await page.locator('.fl-signin__hero').boundingBox();
+  const card = await page.locator('.fl-signin__panel').boundingBox();
+  const pitch = await page.locator('.fl-signin__pitch').boundingBox();
+  expect(stage && card && pitch).toBeTruthy();
+  if (!stage || !card || !pitch) return;
+  expect(card.x).toBeGreaterThanOrEqual(stage.x);
+  expect(card.x + card.width).toBeLessThanOrEqual(stage.x + stage.width);
+  expect(card.y + card.height).toBeLessThanOrEqual(pitch.y);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await axe(page);
+});

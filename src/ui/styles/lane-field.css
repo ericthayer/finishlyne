@@ -1,0 +1,122 @@
+/* <fl-lane-field>: the mark at stage size. Token values only; lane hues arrive as --lane.
+   Runners travel in viewBox units: 660 below the line to start, then coast 300 past it and fade.
+   Trails scale to 0.927 (660/712) on arrival, then to 1 once the runner clears the line. */
+
+fl-lane-field { position: absolute; inset: 0; display: block; overflow: hidden; }
+.fl-lanefield__plane { position: absolute; inset: 0; overflow: hidden; }
+.fl-lanefield__svg { display: block; width: 100%; height: 100%; }
+
+.fl-lanefield__divider { stroke: color-mix(in srgb, var(--ink) 9%, transparent); stroke-width: 2; }
+.fl-lanefield__finish { stroke: var(--signal); stroke-width: 3; opacity: 0.5; }
+
+.fl-lanefield__lane {
+  --lane-run: var(--lane-seconds) var(--lane-delay) infinite;
+}
+.fl-lanefield__runner { fill: var(--lane); }
+.fl-lanefield__stop { stop-color: var(--lane); }
+.fl-lanefield__trail {
+  opacity: 0.42;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+.fl-lanefield__tape { stroke: var(--signal); stroke-width: 3; stroke-linecap: round; opacity: 0.4; }
+
+/* steady: one pace to the line, then through it. */
+[data-pace="steady"] .fl-lanefield__runner { animation: fl-run-steady var(--lane-run) linear; }
+[data-pace="steady"] .fl-lanefield__trail { animation: fl-trail-steady var(--lane-run) linear; }
+[data-pace="steady"] .fl-lanefield__tape { animation: fl-tape-steady var(--lane-run) linear; }
+
+@keyframes fl-run-steady {
+  0% { transform: translateY(660px); opacity: 0; }
+  5% { opacity: 1; }
+  60% { transform: translateY(0); opacity: 1; animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1); }
+  78% { opacity: 1; }
+  86%, 100% { transform: translateY(-300px); opacity: 0; }
+}
+@keyframes fl-trail-steady {
+  0% { transform: scaleY(0); opacity: 0.42; }
+  60% { transform: scaleY(0.927); }
+  66%, 86% { transform: scaleY(1); opacity: 0.42; }
+  100% { transform: scaleY(1); opacity: 0; }
+}
+@keyframes fl-tape-steady {
+  0%, 59% { opacity: 0.4; stroke-width: 3; }
+  61% { opacity: 1; stroke-width: 7; }
+  72%, 86% { opacity: 0.9; stroke-width: 4; }
+  100% { opacity: 0.4; stroke-width: 3; }
+}
+
+/* stall: stops partway, dims like a paused project, then finishes anyway. */
+[data-pace="stall"] .fl-lanefield__runner { animation: fl-run-stall var(--lane-run) ease-in-out; }
+[data-pace="stall"] .fl-lanefield__trail { animation: fl-trail-stall var(--lane-run) ease-in-out; }
+[data-pace="stall"] .fl-lanefield__tape { animation: fl-tape-stall var(--lane-run) linear; }
+
+@keyframes fl-run-stall {
+  0% { transform: translateY(660px); opacity: 0; }
+  5% { opacity: 1; }
+  26% { transform: translateY(363px); opacity: 1; }
+  30%, 36% { opacity: 0.45; }
+  40% { transform: translateY(363px); opacity: 1; }
+  68% { transform: translateY(0); opacity: 1; animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1); }
+  86% { opacity: 1; }
+  94%, 100% { transform: translateY(-300px); opacity: 0; }
+}
+@keyframes fl-trail-stall {
+  0% { transform: scaleY(0); opacity: 0.42; }
+  26%, 40% { transform: scaleY(0.417); }
+  68% { transform: scaleY(0.927); }
+  74%, 90% { transform: scaleY(1); opacity: 0.42; }
+  100% { transform: scaleY(1); opacity: 0; }
+}
+@keyframes fl-tape-stall {
+  0%, 67% { opacity: 0.4; stroke-width: 3; }
+  69% { opacity: 1; stroke-width: 7; }
+  80%, 90% { opacity: 0.9; stroke-width: 4; }
+  100% { opacity: 0.4; stroke-width: 3; }
+}
+
+/* surge: a slow start and a finishing kick. */
+[data-pace="surge"] .fl-lanefield__runner { animation: fl-run-surge var(--lane-run) linear; }
+[data-pace="surge"] .fl-lanefield__trail { animation: fl-trail-surge var(--lane-run) linear; }
+[data-pace="surge"] .fl-lanefield__tape { animation: fl-tape-surge var(--lane-run) linear; }
+
+@keyframes fl-run-surge {
+  0% { transform: translateY(660px); opacity: 0; animation-timing-function: cubic-bezier(0.5, 0, 0.8, 0.6); }
+  5% { opacity: 1; }
+  66% { transform: translateY(0); animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1); }
+  84% { opacity: 1; }
+  92%, 100% { transform: translateY(-300px); opacity: 0; }
+}
+@keyframes fl-trail-surge {
+  0% { transform: scaleY(0); opacity: 0.42; animation-timing-function: cubic-bezier(0.5, 0, 0.8, 0.6); }
+  66% { transform: scaleY(0.927); }
+  72%, 88% { transform: scaleY(1); opacity: 0.42; }
+  100% { transform: scaleY(1); opacity: 0; }
+}
+@keyframes fl-tape-surge {
+  0%, 65% { opacity: 0.4; stroke-width: 3; }
+  67% { opacity: 1; stroke-width: 7; }
+  78%, 88% { opacity: 0.9; stroke-width: 4; }
+  100% { opacity: 0.4; stroke-width: 3; }
+}
+
+fl-lane-field[paused] .fl-lanefield__lane * { animation-play-state: paused; }
+
+.fl-lanefield__toggle {
+  position: absolute;
+  z-index: 3;
+  inset-block-start: var(--space-4);
+  inset-inline-end: var(--space-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+}
+
+/* Still frame: every runner held at its own distance from the line; done lanes stay lit. */
+@media (prefers-reduced-motion: reduce) {
+  .fl-lanefield__lane[data-pace] * { animation: none; }
+  .fl-lanefield__runner { transform: translateY(calc((1 - var(--lane-still)) * 660px)); }
+  .fl-lanefield__trail { transform: scaleY(calc(var(--lane-still) * 0.927)); }
+  .fl-lanefield__lane[data-done] .fl-lanefield__trail { transform: scaleY(1); }
+  .fl-lanefield__lane[data-done] .fl-lanefield__tape { opacity: 1; stroke-width: 6; }
+  .fl-lanefield__toggle { display: none; }
+}
