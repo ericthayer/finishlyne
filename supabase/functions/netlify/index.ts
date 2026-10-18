@@ -1,5 +1,5 @@
 // netlify: read-only Netlify data and live-site checks for project previews. The Netlify
-// token stays in function secrets (NETLIFY_TOKEN); it answers only callers whose GitHub
+// token stays in function secrets (NETLIFY_TOKEN, or NETLIFY_KEY); it answers only callers whose GitHub
 // login matches the GitHub account connected to that Netlify user. Actions: sites, previews.
 import { canEmbed, summarize, type NetlifySummary, type NfDeploy, type NfSite } from './summary.ts';
 
@@ -107,7 +107,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const input = parse(await req.json().catch(() => null));
   if (!input) return json({ error: 'Unknown action' }, 400);
 
-  const token = Deno.env.get('NETLIFY_TOKEN') || undefined;
+  const token = Deno.env.get('NETLIFY_TOKEN') || Deno.env.get('NETLIFY_KEY') || undefined;
   try {
     const status = await netlifyStatus(token, login);
     if (input.action === 'sites') {

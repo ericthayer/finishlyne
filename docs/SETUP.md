@@ -67,7 +67,7 @@ Never put it in `.env.local`, Netlify env vars or the repo; only the `ai-draft-c
 Screenshots and live-site thumbnails work without this. It adds each linked project's Netlify deploy state, deploy previews and Netlify's own screenshot.
 
 1. In Netlify → **User settings → Applications → Personal access tokens**, create a token named `finishlyne` (read access is all it uses).
-2. In Supabase → **Edge Functions → Secrets**, add it as `NETLIFY_TOKEN` (**secret**).
+2. In Supabase → **Edge Functions → Secrets**, add it as `NETLIFY_TOKEN` (**secret**; `NETLIFY_KEY` also works).
 3. The `netlify` Edge Function (`supabase/functions/netlify`) is deployed with `--no-verify-jwt`; it checks the caller's session itself and answers only when the caller's GitHub login matches the GitHub account connected to that Netlify user.
 
 Then Edit on a project lists your Netlify sites. Screenshots go to the private `project-screenshots` Storage bucket (migration `20261018000000_site_previews.sql`).
