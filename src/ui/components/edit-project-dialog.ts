@@ -55,6 +55,7 @@ export class EditProjectDialog extends FormDialog<EditDetail> {
     this.#platform = platformFields(subject.platform);
     this.#site = subject.site ? siteFields(subject.site) : null;
     this.present({
+      size: 'wide',
       title: `Edit “${subject.name}”`,
       intro: this.#site
         ? 'Changes the words, the platform and the site preview. Status moves through Promote and Archive in the Inbox.'

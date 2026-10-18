@@ -78,6 +78,8 @@ function wrapField<C extends FieldControl>(control: C, o: Pick<FieldOptions, 'na
 }
 
 export interface DialogContent {
+  /** `wide` fills most of the viewport, with the fields in columns. */
+  size?: 'wide';
   title: string;
   intro?: string;
   fields: readonly Field<FieldControl>[];
@@ -135,7 +137,7 @@ export abstract class FormDialog<T> extends HTMLElement {
       emit<T>(this, this.eventName, detail);
     });
 
-    const dialog = el('dialog', 'fl-dialog');
+    const dialog = el('dialog', content.size === 'wide' ? 'fl-dialog fl-dialog--wide' : 'fl-dialog');
     dialog.setAttribute('aria-labelledby', title.id);
     dialog.append(form);
     this.#dialog = dialog;

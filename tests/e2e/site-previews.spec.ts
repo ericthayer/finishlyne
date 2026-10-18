@@ -74,3 +74,38 @@ test('Edit says when Netlify is not connected and still saves the site URL', asy
   await form.getByRole('button', { name: 'Save changes' }).click();
   await expect(form).toBeHidden();
 });
+
+test('Edit from the side panel has the same site fields and saves them', async ({ page }) => {
+  await page.goto('/tests/e2e/fixtures/projects.html?drawer');
+  await expect(page.locator('body[data-ready]')).toBeAttached();
+  const panel = page.locator('.fl-drawer__inner');
+  await panel.getByRole('tab', { name: 'Projects' }).click();
+  await panel.getByRole('button', { name: 'Edit Univia' }).click();
+  const form = dialog(page, 'Edit “Univia”');
+  await expect(form.getByRole('combobox', { name: 'Netlify site (optional)' }).getByRole('option', { name: 'univia' })).toBeAttached();
+  await form.getByRole('textbox', { name: 'Site URL (optional)' }).fill('https://univia.help');
+  await form.getByRole('button', { name: 'Save changes' }).click();
+  await expect(form).toBeHidden();
+  const saved = await page.evaluate(() => {
+    const s = (window as unknown as { fixtureSite: { saved: { id: string; change: { siteUrl: string } }[] } }).fixtureSite;
+    return s.saved.map((x) => ({ id: x.id, siteUrl: x.change.siteUrl }));
+  });
+  expect(saved).toEqual([{ id: 'b', siteUrl: 'https://univia.help' }]);
+});
+
+test('the project editor fills most of the screen and lays the fields out in columns', async ({ page }) => {
+  await page.goto('/tests/e2e/fixtures/projects.html');
+  await expect(page.locator('body[data-ready]')).toBeAttached();
+  await page.getByRole('button', { name: 'Edit Univia' }).click();
+  const form = dialog(page, 'Edit “Univia”');
+  const box = await form.boundingBox();
+  const viewport = page.viewportSize();
+  // 90% of the window, capped at 1400px on very wide screens.
+  expect(box?.width ?? 0).toBeGreaterThanOrEqual(Math.min((viewport?.width ?? 0) * 0.85, 1390));
+  const name = await form.getByRole('textbox', { name: 'Name' }).boundingBox();
+  const summary = await form.getByRole('textbox', { name: 'What is it? (optional)' }).boundingBox();
+  // Side by side, not stacked.
+  expect(Math.abs((name?.y ?? 0) - (summary?.y ?? 1))).toBeLessThan(4);
+  await expect(form.getByRole('button', { name: 'Save changes' })).toBeInViewport();
+  await axe(page);
+});

@@ -135,7 +135,7 @@ function start(root: HTMLElement, backend: Backend, config: SupabaseConfig): voi
       signOut: () => void signOut(backend),
       createProject: (detail) => repo.capture(detail),
       onDrawerOpen: (host) => {
-        void import('./app/drawer.ts').then((m) => m.showDrawer(host, repo, undefined, showIssues));
+        void import('./app/drawer.ts').then((m) => m.showDrawer(host, repo, undefined, showIssues, loadSite));
       },
     });
     const capture = shell.capture;

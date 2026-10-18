@@ -8,6 +8,7 @@ import { loadDialog } from '../ui/components/lazy.ts';
 import { mountDrawer } from '../ui/screens/drawer.ts';
 import { announceChange, onChange } from './changes.ts';
 import { saveError } from './errors.ts';
+import { saveSiteFields, siteSubjectFor, type SiteLoader } from './site-edit.ts';
 
 export type DrawerSource = Pick<ProjectsRepo, 'listProjects' | 'listCriteria' | 'loadWipCap' | 'update' | 'move' | 'archive'>;
 
@@ -21,6 +22,7 @@ export function showDrawer(
   repo: DrawerSource,
   now: () => Date = () => new Date(),
   onIssues?: (panel: HTMLElement) => void,
+  site: SiteLoader | null = null,
 ): DrawerController {
   let listings: ProjectListing[] = [];
   let wipCap = DEFAULT_WIP_CAP;
@@ -56,6 +58,7 @@ export function showDrawer(
     if (!listing) return;
     const { project } = listing;
     if (action === 'edit') {
+      const subject = siteSubjectFor(project, site);
       void loadDialog('fl-edit-project-dialog').then(() =>
         screen.edit.edit({
           id,
@@ -65,6 +68,7 @@ export function showDrawer(
           outcome: project.outcome ?? '',
           nextAction: project.nextAction ?? '',
           platform: listing.platform,
+          ...(subject && { site: subject }),
         }),
       );
     } else if (action === 'archive') {
@@ -87,8 +91,9 @@ export function showDrawer(
   const screen = mountDrawer(host, act, onIssues);
 
   screen.edit.addEventListener('fl-project-edit-submit', (event) => {
-    const { id, ...input } = (event as CustomEvent<EditDetail>).detail;
-    repo.update(id, input).then(
+    const { id, site: siteChange, ...input } = (event as CustomEvent<EditDetail>).detail;
+    const before = listings.find((l) => l.project.id === id)?.project;
+    repo.update(id, input).then(() => saveSiteFields(before, siteChange, site)).then(
       () => {
         screen.edit.close();
         settle(`“${input.name}” saved.`);

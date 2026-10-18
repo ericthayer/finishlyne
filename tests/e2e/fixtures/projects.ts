@@ -123,7 +123,7 @@ const site = memorySite(
 
 const host = document.getElementById('app');
 if (host) {
-  const shell = fixtureShell(host, 'projects', { capture: repo.capture, drawer: repo });
+  const shell = fixtureShell(host, 'projects', { capture: repo.capture, drawer: repo, site: async () => site });
   void showProjects(shell.main, repo, params.get('q') ?? '', shell.claimSearch, () => new Date('2026-10-10T12:00:00Z'), async () => site).refresh().then(() => {
     document.body.dataset['ready'] = 'true';
   });
