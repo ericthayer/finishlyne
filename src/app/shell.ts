@@ -7,7 +7,7 @@ import { cloneTemplate, slot } from './templates.ts';
 
 export interface Shell {
   main: HTMLElement;
-  /** The push-in side panel. Filled lazily by `onDrawerOpen`. */
+  /** The side panel's content host. Filled lazily by `onDrawerOpen`. */
   drawer: HTMLElement;
   /** Quick capture, opened with `/` from any screen. */
   capture: CaptureDialog;
@@ -28,6 +28,8 @@ export interface ShellOptions {
 }
 
 const DRAWER_KEY = 'fl-drawer';
+/** Below this width the side panel overlays the page instead of pushing it (matches screens.css). */
+const OVERLAY_QUERY = '(max-width: 720px)';
 
 function drawerSaved(): boolean {
   try {
@@ -42,7 +44,10 @@ export function mountShell(host: HTMLElement, user: { displayName: string }, opt
   const fragment = cloneTemplate('tpl-shell');
   const body = slot(fragment, 'body');
   const main = slot(fragment, 'main');
-  const drawer = slot(fragment, 'drawer');
+  const panel = slot(fragment, 'drawer');
+  const drawer = slot(fragment, 'drawer-content');
+  const scrim = slot(fragment, 'drawer-scrim');
+  const rail = fragment.querySelector<HTMLElement>('.fl-rail');
   const capture = slot<CaptureDialog>(fragment, 'capture');
   const create = slot<CreateProjectDialog>(fragment, 'create');
   const account = slot(fragment, 'account');
@@ -88,12 +93,24 @@ export function mountShell(host: HTMLElement, user: { displayName: string }, opt
     );
   });
 
+  // Wide screens: the panel pushes main over and is remembered. Phones: it overlays the page
+  // like a sheet, always starts closed, and closes with its own button, Escape or a tap outside.
+  const narrow = matchMedia(OVERLAY_QUERY);
   let loaded = false;
+  let isOpen = false;
   const setDrawer = (open: boolean, remember: boolean): void => {
+    const overlay = open && narrow.matches;
+    const hadFocus = panel.contains(document.activeElement);
+    isOpen = open;
     body.dataset['drawer'] = open ? 'open' : 'closed';
-    drawer.inert = !open;
+    panel.inert = !open;
+    scrim.hidden = !overlay;
+    main.inert = overlay;
+    if (rail) rail.inert = overlay;
     toggle.setAttribute('aria-expanded', String(open));
-    if (remember) {
+    if (overlay) panel.querySelector<HTMLElement>('[data-action="drawer-close"]')?.focus();
+    else if (!open && hadFocus) toggle.focus();
+    if (remember && !narrow.matches) {
       try {
         localStorage.setItem(DRAWER_KEY, open ? 'open' : 'closed');
       } catch {
@@ -105,10 +122,22 @@ export function mountShell(host: HTMLElement, user: { displayName: string }, opt
       options.onDrawerOpen?.(drawer);
     }
   };
-  toggle.addEventListener('click', () => setDrawer(body.dataset['drawer'] !== 'open', true));
+  toggle.addEventListener('click', () => setDrawer(!isOpen, true));
+  panel.querySelector('[data-action="drawer-close"]')?.addEventListener('click', () => setDrawer(false, true));
+  scrim.addEventListener('click', () => setDrawer(false, false));
+  // A link in the overlay routes in place; close the sheet so the new page shows.
+  drawer.addEventListener('click', (event) => {
+    if (narrow.matches && event.target instanceof Element && event.target.closest('a[href]')) setDrawer(false, false);
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !isOpen || !narrow.matches || event.defaultPrevented) return;
+    if (document.querySelector('dialog[open], :popover-open')) return;
+    setDrawer(false, false);
+  });
+  narrow.addEventListener('change', () => setDrawer(isOpen && !narrow.matches, false));
 
   host.replaceChildren(fragment);
-  setDrawer(drawerSaved(), false);
+  setDrawer(drawerSaved() && !narrow.matches, false);
   placeBar(main, search, actions);
 
   return {

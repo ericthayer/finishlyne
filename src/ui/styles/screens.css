@@ -222,6 +222,43 @@ fl-inbox-list { display: block; }
   .fl-app__body, .fl-app__body[data-drawer="closed"] > .fl-drawer { transition: none; }
 }
 
+/* ── Phones (≤720px; the design was set for 1280–2560px) ─ */
+/* The side panel becomes a sheet over the page: close button, scrim, slide in from the right. */
+.fl-drawer__close, .fl-drawer__scrim { display: none; }
+@media (max-width: 720px) {
+  .fl-main { padding: var(--space-4) var(--space-4) var(--space-8); }
+  .fl-drawer { z-index: 3; overscroll-behavior: contain; transition: translate var(--duration-base) ease; }
+  .fl-app__body[data-drawer="closed"] > .fl-drawer { translate: 100% 0; transition: translate var(--duration-base) ease, visibility 0s var(--duration-base); }
+  .fl-drawer__inner { padding: var(--space-4); }
+  .fl-drawer__close { display: inline-flex; position: absolute; top: var(--space-4); right: var(--space-2); z-index: 1; }
+  .fl-drawer .fl-tabs { margin-right: calc(var(--control-height) + var(--space-2)); }
+  .fl-drawer__scrim:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 2; background: var(--scrim); }
+  /* 16px stops iOS Safari zooming the page when a field takes focus. */
+  .fl-root :is(input, select, textarea) { font-size: max(1rem, 1em); }
+}
+@media (max-width: 720px) and (prefers-reduced-motion: reduce) {
+  .fl-drawer, .fl-app__body[data-drawer="closed"] > .fl-drawer { transition: none; }
+}
+/* Projects by status: six columns can't fit a phone, so wrap them three to a row. */
+@container main (max-width: 560px) {
+  .fl-stages { flex-wrap: wrap; row-gap: var(--space-4); min-height: 0; }
+  .fl-stage { flex: 1 1 calc(33.333% - 2px); box-sizing: border-box; min-height: 7rem; }
+}
+/* Screen-reader text in a scrolled table must stay inside the scroller, or it widens the page. */
+.fl-tablewrap { position: relative; }
+/* Tables: tighter cells, and Updated gives way so Status and Last progress stay in view. */
+@container (max-width: 560px) {
+  .fl-table th, .fl-table td { padding: var(--space-3) var(--space-4); }
+  .fl-table [data-col="updated"] { display: none; }
+}
+/* Touch: row actions get a finger-sized target; hover-only rail labels don't stick after a tap. */
+@media (pointer: coarse) {
+  .fl-table__action { min-height: var(--control-height); }
+}
+@media (hover: none) {
+  .fl-rail .fl-iconbtn[aria-label]:hover:not(:focus-visible)::after { content: none; }
+}
+
 /* ── Tabs ───────────────────────────────────────────────── */
 .fl-tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--line); }
 .fl-tabs__tab {
