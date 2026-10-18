@@ -40,6 +40,12 @@ export interface Project {
   lastProgressAt: Timestamp;
   shippedAt: Timestamp | null;
   shippedUrl: string | null;
+  /** The live site to preview, https only. */
+  siteUrl: string | null;
+  /** The linked Netlify site; its data comes from the netlify Edge Function. */
+  netlifySiteId: string | null;
+  /** Uploaded screenshot in the project-screenshots bucket: <user id>/<project id>/<timestamp>. */
+  screenshotPath: string | null;
   archivedAt: Timestamp | null;
   archivedReason: string | null;
   tags: readonly string[];

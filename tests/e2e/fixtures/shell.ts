@@ -3,6 +3,7 @@ import type { RouteName } from '../../../src/app/router.ts';
 import { mountShell, type Shell } from '../../../src/app/shell.ts';
 import { showIssues } from '../../../src/app/github-issues.ts';
 import { DEFAULT_STALE_THRESHOLDS } from '../../../src/domain/staleness.ts';
+import type { SiteLoader } from '../../../src/app/site-edit.ts';
 import type { GitHubSource } from '../../../src/data/github.ts';
 import type { CaptureInput, ProjectListing } from '../../../src/data/projects.ts';
 import type { CreateDetail } from '../../../src/ui/components/create-project-dialog.ts';
@@ -21,6 +22,8 @@ export interface FixtureShellOptions {
   capture?: (input: CaptureInput) => Promise<{ name: string }>;
   /** Fills the Issues tab; without it the tab keeps its empty state. */
   github?: GitHubSource;
+  /** Gives the side panel's Edit the site fields. */
+  site?: SiteLoader;
 }
 
 export function fixtureShell(host: HTMLElement, route: RouteName, options: FixtureShellOptions = {}): Shell {
@@ -29,7 +32,7 @@ export function fixtureShell(host: HTMLElement, route: RouteName, options: Fixtu
   } catch {
     // Storage blocked: the shell's default applies.
   }
-  const { drawer, capture, github } = options;
+  const { drawer, capture, github, site } = options;
   let issues: { refresh(): Promise<void> } | null = null;
   const onIssues = github && drawer
     ? (panel: HTMLElement): void => {
@@ -40,7 +43,7 @@ export function fixtureShell(host: HTMLElement, route: RouteName, options: Fixtu
   const shell = mountShell(host, { displayName: 'Eric' }, {
     signOut() {},
     createProject: (detail: CreateDetail) => (capture ? capture(detail) : Promise.resolve({ name: detail.name })),
-    ...(drawer ? { onDrawerOpen: (panel: HTMLElement) => void showDrawer(panel, drawer, () => FIXTURE_NOW, onIssues) } : {}),
+    ...(drawer ? { onDrawerOpen: (panel: HTMLElement) => void showDrawer(panel, drawer, () => FIXTURE_NOW, onIssues, site ?? null) } : {}),
   });
   shell.setRoute({ name: route, params: {} });
   return shell;

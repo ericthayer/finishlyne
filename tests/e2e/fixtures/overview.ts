@@ -8,6 +8,7 @@ import { memoryGitHub } from './memory-github.ts';
 import { buildOverview } from '../../../src/state/overview-model.ts';
 import { renderOverview } from '../../../src/ui/screens/overview.ts';
 import { project } from '../../fixtures.ts';
+import { LIVE_URL, memorySite } from './memory-site.ts';
 
 // Pull the shell templates from the real index.html so this page can't drift from it.
 const parsed = new DOMParser().parseFromString(indexHtml, 'text/html');
@@ -15,11 +16,13 @@ for (const tpl of parsed.querySelectorAll('template')) document.body.append(docu
 
 const params = new URLSearchParams(location.search);
 const empty = params.has('empty');
+// ?sites gives Finishline an uploaded screenshot and DevLog a live site plus Netlify data.
+const sites = params.has('sites');
 const projects = empty
   ? []
   : [
-      project({ id: 'a', slug: 'finishline', name: 'Finishline', status: 'active', focusRank: 1, nextAction: 'Wire Supabase sign-in through the GitHub App.', lastProgressAt: '2026-10-10T08:00:00Z' }),
-      project({ id: 'b', slug: 'devlog', name: 'DevLog', status: 'active', focusRank: 2, nextAction: 'Fix the timezone bug in the weekly digest.', lastProgressAt: '2026-10-01T08:00:00Z' }),
+      project({ id: 'a', slug: 'finishline', name: 'Finishline', status: 'active', focusRank: 1, nextAction: 'Wire Supabase sign-in through the GitHub App.', lastProgressAt: '2026-10-10T08:00:00Z', ...(sites && { screenshotPath: 'u/a/1' }) }),
+      project({ id: 'b', slug: 'devlog', name: 'DevLog', status: 'active', focusRank: 2, nextAction: 'Fix the timezone bug in the weekly digest.', lastProgressAt: '2026-10-01T08:00:00Z', ...(sites && { siteUrl: LIVE_URL, netlifySiteId: 'site-b' }) }),
       project({ id: 'c', slug: 'stacker', name: 'Stacker', status: 'paused', reviewOn: '2026-09-01', nextAction: 'Decide: keep the Bolt prototype or rebuild.' }),
       project({ id: 'd', slug: 'univia', name: 'Univia', status: 'ready', nextAction: 'Write the first migration for courses.' }),
       project({ id: 'e', slug: 'portfolio', name: 'Portfolio v3', status: 'shipped', shippedAt: '2026-10-03T00:00:00Z' }),
@@ -50,5 +53,33 @@ if (host) {
       ]);
   const shell = fixtureShell(host, 'overview', { drawer: drawerSource(listings), ...(github ? { github } : {}) });
   renderOverview(shell.main, model);
-  document.body.dataset['ready'] = 'true';
+  const ready = (): void => {
+    document.body.dataset['ready'] = 'true';
+  };
+  if (!sites) ready();
+  else {
+    const site = memorySite(
+      {
+        netlify: 'connected',
+        projects: {
+          b: {
+            embeddable: true,
+            netlify: {
+              siteId: 'site-b',
+              name: 'devlog',
+              url: 'https://devlog.netlify.app',
+              adminUrl: 'https://app.netlify.com/projects/devlog',
+              screenshotUrl: null,
+              latest: { state: 'ready', at: '2026-10-10T10:00:00Z', url: 'https://devlog.netlify.app', branch: 'main', error: null },
+              previews: [{ review: 12, title: 'Digest fix', url: 'https://deploy-preview-12--devlog.netlify.app', prUrl: null, at: '2026-10-10T09:00:00Z' }],
+            },
+          },
+        },
+      },
+      { netlify: 'connected', sites: [] },
+    );
+    void import('../../../src/app/site-previews.ts')
+      .then((m) => m.decorateCards(shell.main, projects, site, new Date('2026-10-10T12:00:00Z')))
+      .then(ready);
+  }
 }

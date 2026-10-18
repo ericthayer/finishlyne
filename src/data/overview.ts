@@ -24,6 +24,9 @@ export interface ProjectRow {
   last_progress_at: string;
   shipped_at: string | null;
   shipped_url: string | null;
+  site_url: string | null;
+  netlify_site_id: string | null;
+  screenshot_path: string | null;
   archived_at: string | null;
   archived_reason: string | null;
   tags: string[];
@@ -57,6 +60,9 @@ export function toProject(r: ProjectRow): Project {
     lastProgressAt: r.last_progress_at,
     shippedAt: r.shipped_at,
     shippedUrl: r.shipped_url,
+    siteUrl: r.site_url ?? null,
+    netlifySiteId: r.netlify_site_id ?? null,
+    screenshotPath: r.screenshot_path ?? null,
     archivedAt: r.archived_at,
     archivedReason: r.archived_reason,
     tags: r.tags,

@@ -41,6 +41,13 @@ export class WipLanes extends DataElement<string> {
 /** <fl-project-card lane name status next days level platform repo href> · no name = open lane. */
 export class ProjectCard extends AttrElement {
   static readonly observedAttributes = ['lane', 'name', 'status', 'next', 'days', 'level', 'platform', 'repo', 'href'];
+  #preview: HTMLElement | null = null;
+
+  /** A site thumbnail shown under the name; set after the card renders, kept across re-renders. */
+  set preview(node: HTMLElement | null) {
+    this.#preview = node;
+    if (this.isConnected) this.render();
+  }
 
   protected render(): void {
     const lane = this.attr('lane') ? `L${this.attr('lane')}` : '';
@@ -68,7 +75,9 @@ export class ProjectCard extends AttrElement {
     meta.append(staleBadge(level, Number(this.attr('days')) || 0), el('span', 'fl-meta', where));
 
     const card = el('article', 'fl-card');
-    card.append(top, heading, next, meta);
+    card.append(top, heading);
+    if (this.#preview) card.append(this.#preview);
+    card.append(next, meta);
     this.replaceChildren(card);
   }
 }

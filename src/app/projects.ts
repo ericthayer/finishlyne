@@ -1,4 +1,5 @@
 import type { ProjectListing, ProjectsRepo } from '../data/projects.ts';
+import { saveSiteFields, siteSubjectFor, type SiteLoader } from './site-edit.ts';
 import { explainGate } from '../domain/gates.ts';
 import { checkTransition, defaultReviewOn, DEFAULT_WIP_CAP } from '../domain/lifecycle.ts';
 import { DEFAULT_STALE_THRESHOLDS, type StaleThresholds } from '../domain/staleness.ts';
@@ -28,13 +29,17 @@ export type ProjectsSource = Pick<ProjectsRepo, 'listProjects' | 'update' | 'mov
 /** The header search, claimed by this screen so it filters in place. */
 export type ClaimSearch = (onQuery: (query: string) => void, initial: string) => void;
 
-/** Mounts the Projects list into `main`. `initialQuery` comes from the header search (`?q=`). */
+/**
+ * Mounts the Projects list into `main`. `initialQuery` comes from the header search (`?q=`).
+ * With `site`, Edit also sets the project's site URL, Netlify site and screenshot.
+ */
 export function showProjects(
   main: HTMLElement,
   repo: ProjectsSource,
   initialQuery: string,
   claimSearch: ClaimSearch,
   now: () => Date = () => new Date(),
+  site: SiteLoader | null = null,
 ): ProjectsController {
   let filter: ProjectFilter = { query: initialQuery, statuses: DEFAULT_STATUSES };
   let listings: ProjectListing[] = [];
@@ -99,6 +104,7 @@ export function showProjects(
       if (!listing) return;
       const { project } = listing;
       if (action === 'edit') {
+        const subject = siteSubjectFor(project, site);
         void loadDialog('fl-edit-project-dialog').then(() =>
           screen.edit.edit({
             id,
@@ -108,6 +114,7 @@ export function showProjects(
             outcome: project.outcome ?? '',
             nextAction: project.nextAction ?? '',
             platform: listing.platform,
+            ...(subject && { site: subject }),
           }),
         );
       } else if (action === 'start' || action === 'resume') {
@@ -172,8 +179,9 @@ export function showProjects(
   const nameOf = (id: string): string => find(id)?.project.name ?? 'Project';
 
   screen.edit.addEventListener('fl-project-edit-submit', (event) => {
-    const { id, ...input } = (event as CustomEvent<EditDetail>).detail;
-    repo.update(id, input).then(
+    const { id, site: siteChange, ...input } = (event as CustomEvent<EditDetail>).detail;
+    const before = find(id)?.project;
+    repo.update(id, input).then(() => saveSiteFields(before, siteChange, site)).then(
       () => {
         screen.edit.close();
         void settle(`“${input.name}” saved.`);
