@@ -84,17 +84,23 @@ export class ProjectTable extends DataElement<ProjectRow> {
       const nameCell = el('td');
       nameCell.append(name);
 
+      // data-label names each cell when the table shows rows as cards on narrow screens.
       const statusCell = el('td');
+      statusCell.dataset['label'] = 'Status';
       statusCell.append(statusPill(r.status));
 
       const next = el('td', 'fl-table__next', r.next || '—');
       next.dataset['col'] = 'next';
+      next.dataset['label'] = 'Next action';
       if (r.next) next.title = r.next;
+      else next.dataset['empty'] = '';
 
       const agent = el('td', 'fl-muted', r.platform || '—');
       agent.dataset['col'] = 'agent';
 
       const progress = el('td');
+      progress.dataset['col'] = 'progress';
+      progress.dataset['label'] = 'Last progress';
       if (r.stale) progress.append(staleBadge(r.stale.level, r.stale.days, r.stale.label));
       else progress.textContent = '—';
 

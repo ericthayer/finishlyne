@@ -65,12 +65,58 @@ test('the close button is only shown on phones', async ({ page }) => {
 for (const width of [360, 390, 430]) {
   test(`no screen scrolls sideways at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
-    for (const fixture of ['overview', 'projects', 'inbox', 'archive', 'settings', 'activity']) {
+    for (const fixture of ['overview', 'projects', 'inbox', 'archive', 'settings', 'activity', 'github']) {
       await open(page, fixture);
       expect(await page.evaluate(() => document.documentElement.scrollWidth), fixture).toBeLessThanOrEqual(width);
     }
   });
 }
+
+test('the rail becomes a bottom tab bar with visible names', async ({ page }) => {
+  await open(page, 'projects');
+  const rail = page.getByRole('complementary', { name: 'Primary' });
+  const box = await rail.boundingBox();
+  expect(box).not.toBeNull();
+  expect(Math.round((box?.y ?? 0) + (box?.height ?? 0))).toBe(844);
+  expect(box?.width).toBe(390);
+  const nav = page.getByRole('navigation', { name: 'Main' });
+  for (const name of ['Overview', 'Projects', 'Inbox', 'Archive', 'GitHub']) {
+    const link = nav.getByRole('link', { name, exact: true });
+    await expect(link).toBeVisible();
+    expect(await link.evaluate((a) => getComputedStyle(a, '::after').content)).toContain(name);
+  }
+  await expect(nav.getByRole('link', { name: 'Projects', exact: true })).toHaveAttribute('aria-current', 'page');
+  // Main scrolls above the bar, so its last row is never hidden behind it.
+  const mainBottom = await page.locator('.fl-main').evaluate((m) => m.getBoundingClientRect().bottom);
+  expect(mainBottom).toBeLessThanOrEqual(box?.y ?? 0);
+});
+
+test('the account menu opens above the tab bar', async ({ page }) => {
+  await open(page, 'overview');
+  await page.locator('[data-slot="avatar"]').tap();
+  const menu = page.locator('#fl-account');
+  await expect(menu).toBeVisible();
+  const [menuBox, railBox] = await Promise.all([menu.boundingBox(), page.locator('.fl-rail').boundingBox()]);
+  expect((menuBox?.y ?? 0) + (menuBox?.height ?? 0)).toBeLessThanOrEqual(railBox?.y ?? 0);
+  expect((menuBox?.x ?? 0) + (menuBox?.width ?? 0)).toBeLessThanOrEqual(390);
+});
+
+test('table rows show as cards with every row in reach, no sideways swipe', async ({ page }) => {
+  await open(page, 'projects');
+  const wrap = page.locator('.fl-tablewrap');
+  expect(await wrap.evaluate((w) => w.scrollWidth <= w.clientWidth)).toBe(true);
+  const rows = page.locator('.fl-table tbody tr');
+  expect(await rows.count()).toBe(4);
+  const row = rows.first();
+  for (const label of ['Status', 'Next action', 'Last progress']) {
+    await expect(row.locator(`td[data-label="${label}"]`)).toBeVisible();
+  }
+  await expect(row.getByText('+0d')).toBeVisible();
+  // The last card is reachable by scrolling the page.
+  await rows.last().scrollIntoViewIfNeeded();
+  await expect(rows.last().getByRole('link')).toBeInViewport();
+  await expect(page.getByRole('table', { name: /Projects/ })).toBeAttached();
+});
 
 test('table row actions are big enough to tap', async ({ page }) => {
   await open(page, 'projects');
