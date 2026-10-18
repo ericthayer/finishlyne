@@ -53,7 +53,10 @@ async function appJwt(config: AppConfig): Promise<string> {
     { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
     false,
     ['sign'],
-  );
+  ).catch((error: unknown) => {
+    signingKey = null; // a bad key is reported, not cached, so fixing the secret takes effect
+    throw error;
+  });
   const now = Math.floor(Date.now() / 1000);
   const enc = new TextEncoder();
   const head = b64url(enc.encode(JSON.stringify({ alg: 'RS256', typ: 'JWT' })));
