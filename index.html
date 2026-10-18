@@ -2,8 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Finishlyne" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="color-scheme" content="dark light" />
+    <link rel="preload" href="/fonts/plus-jakarta-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
     <title>Finishlyne</title>
     <script>
       // Apply a remembered light theme before first paint; dark is the default.
@@ -37,6 +41,8 @@
           <nav class="fl-account__links" aria-label="Account">
             <a href="/activity" data-route="activity"><fl-icon name="activity"></fl-icon>Recent activity</a>
             <a href="/settings" data-route="settings"><fl-icon name="settings"></fl-icon>Settings</a>
+            <!-- Phones only: the tab bar has no room for the theme toggle, so it lives here. -->
+            <fl-theme-toggle class="fl-account__theme" labelled></fl-theme-toggle>
             <button type="button" data-action="sign-out"><fl-icon name="logout"></fl-icon>Sign out</button>
           </nav>
           <p class="fl-account__version" data-slot="version"></p>

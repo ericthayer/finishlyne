@@ -100,11 +100,15 @@ fl-inbox-list { display: block; }
 /* App frame: the page scrolls inside .fl-main, not the document (layout fix, overrides components.css). */
 .fl-root { display: flex; flex-direction: column; overflow: hidden; }
 .fl-main { overflow: auto; }
+/* Rows take their content height. Auto rows in a fixed-height scroller were squeezed to fit, which clipped long tables. */
+.fl-main { grid-auto-rows: max-content; }
 
 /* Shell without a top bar (Eric, 2026-10-11): rail | body. Every page head is
    title | search | actions; the avatar at the foot of the rail opens the account menu. Overrides the two-row grid in components.css. */
 .fl-app { grid-template-rows: minmax(0, 1fr); grid-template-areas: "rail body"; }
 .fl-rail__foot .fl-avatar { margin-top: var(--space-2); }
+/* Clear the notch, status bar and home indicator when installed to a home screen (viewport-fit=cover); zero elsewhere. */
+.fl-app { box-sizing: border-box; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 .fl-btn--icon { padding-inline: 0; width: var(--control-height); }
 
 /* Ship dialog: reuses the .fl-check list; these only reset the fieldset and style the note. */
@@ -148,6 +152,8 @@ fl-inbox-list { display: block; }
 
 /* ── Account menu (avatar popover) ──────────────────────── */
 .fl-avatar--button { border: 0; padding: 0; cursor: pointer; }
+/* Light theme's ready colour is a deep teal, so the initial turns white to keep 4.5:1. */
+[data-theme="light"] .fl-avatar { color: var(--on-brand); }
 .fl-avatar--button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .fl-account {
   position: fixed;
@@ -183,6 +189,7 @@ fl-inbox-list { display: block; }
 .fl-account__links :is(a, button):hover, .fl-account__links a[aria-current="page"] { background: var(--surface-sunken); }
 .fl-account__links :is(a, button):focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .fl-account__links fl-icon { width: var(--icon-size); height: var(--icon-size); color: var(--ink-muted); }
+.fl-account__links .fl-account__theme { display: none; }
 .fl-account__version { margin: 0; padding: var(--space-2) var(--space-3) var(--space-1); color: var(--ink-muted); font: 400 var(--text-label-size)/var(--text-label-leading) var(--font-mono); }
 
 /* ── Side panel: pushes main over instead of covering it ── */
@@ -204,7 +211,7 @@ fl-inbox-list { display: block; }
 .fl-commit__nudge[data-level="cold"] { color: var(--ink); }
 .fl-commit__nudge[data-level="cold"] fl-icon { color: var(--danger); }
 .fl-drawer__project { display: grid; gap: var(--space-1); min-width: 0; }
-/* The yellow stripe marks committed lanes only, so open-project cards drop it. */
+/* The signal stripe marks committed lanes only, so open-project cards drop it. */
 .fl-drawer__project .fl-card::before { display: none; }
 .fl-drawer__project .fl-card { padding-left: var(--space-4); }
 .fl-drawer__actions { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); }
@@ -235,6 +242,59 @@ fl-inbox-list { display: block; }
   .fl-drawer__scrim:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 2; background: var(--scrim); }
   /* 16px stops iOS Safari zooming the page when a field takes focus. */
   .fl-root :is(input, select, textarea) { font-size: max(1rem, 1em); }
+
+  /* Bottom tab bar: the rail moves under the page. Main scrolls above it, so nothing hides behind it. */
+  .fl-app {
+    --tabbar-height: calc(var(--control-height) + var(--space-4) + var(--space-2));
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "body" "rail";
+    padding-bottom: 0;
+  }
+  .fl-rail {
+    flex-direction: row;
+    gap: 0;
+    padding: var(--space-1) var(--space-2) calc(var(--space-1) + env(safe-area-inset-bottom));
+    border-right: 0;
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .fl-rail__mark, .fl-rail__foot fl-theme-toggle { display: none; }
+  .fl-account__links .fl-account__theme { display: grid; }
+  .fl-rail nav { flex: 1 1 auto; flex-direction: row; justify-content: space-around; gap: 0; }
+  .fl-rail__foot { flex-direction: row; gap: var(--space-1); margin-top: 0; padding-left: var(--space-2); }
+  .fl-rail__foot .fl-avatar { margin-top: 0; }
+  .fl-rail nav a.fl-iconbtn {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    max-width: 5.5rem;
+    height: auto;
+    min-height: calc(var(--tabbar-height) - var(--space-2));
+    gap: 2px;
+    align-content: center;
+    padding: 0 var(--space-1);
+  }
+  .fl-rail nav a.fl-iconbtn[aria-current="page"]::before { inset: calc(-1 * var(--space-1)) 30% auto; width: auto; height: 3px; border-radius: 0 0 var(--radius-xs) var(--radius-xs); }
+  /* Visible names under the icons. The link's aria-label already names it, so the text is hidden from screen readers. */
+  .fl-app .fl-rail nav .fl-iconbtn[aria-label]:is(*, :hover, :focus-visible)::after {
+    content: attr(aria-label);
+    content: attr(aria-label) / "";
+    position: static;
+    translate: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    color: inherit;
+    font: 500 0.6875rem/1.2 var(--font-sans);
+  }
+  .fl-rail nav a.fl-iconbtn { text-decoration: none; }
+  .fl-account { inset: auto max(var(--space-2), env(safe-area-inset-right)) calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-2)) auto; width: min(18rem, 100vw - var(--space-4)); }
+
+  /* The side panel sheet covers the full height, so it pads itself clear of the notch and home indicator. */
+  .fl-drawer { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) 0; box-sizing: border-box; }
+  .fl-drawer__close { top: calc(var(--space-4) + env(safe-area-inset-top)); right: calc(var(--space-2) + env(safe-area-inset-right)); }
 }
 @media (max-width: 720px) and (prefers-reduced-motion: reduce) {
   .fl-drawer, .fl-app__body[data-drawer="closed"] > .fl-drawer { transition: none; }
@@ -246,10 +306,28 @@ fl-inbox-list { display: block; }
 }
 /* Screen-reader text in a scrolled table must stay inside the scroller, or it widens the page. */
 .fl-tablewrap { position: relative; }
-/* Tables: tighter cells, and Updated gives way so Status and Last progress stay in view. */
+/* Tables become one card per row: name and actions, then next action, then status beside last progress.
+   Nothing scrolls sideways. The header row stays for screen readers; cells label themselves visually. */
 @container (max-width: 560px) {
-  .fl-table th, .fl-table td { padding: var(--space-3) var(--space-4); }
-  .fl-table [data-col="updated"] { display: none; }
+  .fl-table, .fl-table tbody { display: block; }
+  .fl-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .fl-table tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-3) var(--space-4); padding: var(--space-4); border-top: 1px solid var(--line); }
+  .fl-table td { display: block; min-width: 0; padding: 0; border: 0; }
+  .fl-table td:first-child { grid-column: 1 / -1; }
+  .fl-table td[data-col="next"] { display: block; order: 1; grid-column: 1 / -1; max-width: none; white-space: normal; }
+  .fl-table td[data-col="status"] { order: 2; }
+  .fl-table td[data-col="progress"] { order: 3; }
+  .fl-table td[data-col="next"][data-empty], .fl-table [data-col="agent"], .fl-table [data-col="updated"] { display: none; }
+  .fl-table td[data-col="progress"] { justify-self: end; }
+  .fl-table td[data-label]::before {
+    content: attr(data-label);
+    content: attr(data-label) / "";
+    display: block;
+    margin-bottom: 2px;
+    color: var(--ink-muted);
+    font: var(--text-label-weight) var(--text-label-size)/var(--text-label-leading) var(--font-sans);
+  }
+  .fl-table td[data-col="progress"][data-label]::before { text-align: right; }
 }
 /* Touch: row actions get a finger-sized target; hover-only rail labels don't stick after a tap. */
 @media (pointer: coarse) {

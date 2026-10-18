@@ -63,7 +63,8 @@ export function mountShell(host: HTMLElement, user: { displayName: string }, opt
   });
   // Links route in place, so close the menu ourselves once one is chosen.
   account.addEventListener('click', (event) => {
-    if (event.target instanceof Element && event.target.closest('a, button')) account.hidePopover();
+    // composedPath, not target.closest: the theme item repaints its icon mid-click, detaching the target.
+    if (event.composedPath().some((n) => n instanceof Element && n.matches('a, button'))) account.hidePopover();
   });
   account.querySelector('[data-action="sign-out"]')?.addEventListener('click', () => options.signOut());
   const links = [...fragment.querySelectorAll<HTMLAnchorElement>('a[data-route]')];
