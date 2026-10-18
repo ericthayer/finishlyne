@@ -3,6 +3,7 @@
    Trails scale to 0.927 (660/712) on arrival, then to 1 once the runner clears the line. */
 
 fl-lane-field { position: absolute; inset: 0; display: block; overflow: hidden; }
+.fl-lanefield__plane { position: absolute; inset: 0; overflow: hidden; }
 .fl-lanefield__svg { display: block; width: 100%; height: 100%; }
 
 .fl-lanefield__divider { stroke: color-mix(in srgb, var(--ink) 9%, transparent); stroke-width: 2; }
@@ -26,7 +27,8 @@ fl-lane-field { position: absolute; inset: 0; display: block; overflow: hidden; 
 [data-pace="steady"] .fl-lanefield__tape { animation: fl-tape-steady var(--lane-run) linear; }
 
 @keyframes fl-run-steady {
-  0% { transform: translateY(660px); }
+  0% { transform: translateY(660px); opacity: 0; }
+  5% { opacity: 1; }
   60% { transform: translateY(0); opacity: 1; animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1); }
   78% { opacity: 1; }
   86%, 100% { transform: translateY(-300px); opacity: 0; }
@@ -50,7 +52,8 @@ fl-lane-field { position: absolute; inset: 0; display: block; overflow: hidden; 
 [data-pace="stall"] .fl-lanefield__tape { animation: fl-tape-stall var(--lane-run) linear; }
 
 @keyframes fl-run-stall {
-  0% { transform: translateY(660px); opacity: 1; }
+  0% { transform: translateY(660px); opacity: 0; }
+  5% { opacity: 1; }
   26% { transform: translateY(363px); opacity: 1; }
   30%, 36% { opacity: 0.45; }
   40% { transform: translateY(363px); opacity: 1; }
@@ -78,7 +81,8 @@ fl-lane-field { position: absolute; inset: 0; display: block; overflow: hidden; 
 [data-pace="surge"] .fl-lanefield__tape { animation: fl-tape-surge var(--lane-run) linear; }
 
 @keyframes fl-run-surge {
-  0% { transform: translateY(660px); opacity: 1; animation-timing-function: cubic-bezier(0.5, 0, 0.8, 0.6); }
+  0% { transform: translateY(660px); opacity: 0; animation-timing-function: cubic-bezier(0.5, 0, 0.8, 0.6); }
+  5% { opacity: 1; }
   66% { transform: translateY(0); animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1); }
   84% { opacity: 1; }
   92%, 100% { transform: translateY(-300px); opacity: 0; }

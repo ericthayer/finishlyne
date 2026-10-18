@@ -10,18 +10,33 @@ async function runnerAnimation(page: Page): Promise<{ name: string; state: strin
   });
 }
 
-test('the sign-in card sits beside the stage and its button is the first stop', async ({ page }) => {
+test('the sign-in card sits on the stage, clear of the pitch, and its button is the first stop', async ({ page }) => {
   await page.goto('/');
   const card = await page.locator('.fl-signin__panel').boundingBox();
+  const pitch = await page.locator('.fl-signin__pitch').boundingBox();
   const stage = await page.locator('.fl-signin__hero').boundingBox();
-  expect(card && stage && card.x > stage.x + stage.width).toBe(true);
+  expect(card && pitch && stage).toBeTruthy();
+  if (!card || !pitch || !stage) return;
+  expect(card.x).toBeGreaterThanOrEqual(pitch.x + pitch.width);
+  expect(card.x + card.width).toBeLessThanOrEqual(stage.x + stage.width);
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'Continue with GitHub' })).toBeFocused();
 });
 
-test('the pitch stays readable: its own heading, on the stage', async ({ page }) => {
+test('the pitch stays readable: its own heading, upright, two lines at any width', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Less starting. More shipping.', level: 2 })).toBeVisible();
+  const heading = page.getByRole('heading', { name: 'Less starting. More shipping.', level: 2 });
+  await expect(heading).toBeVisible();
+  // Only the stage plane turns; the text never does.
+  expect(await heading.evaluate((h) => getComputedStyle(h).transform)).toBe('none');
+  const lines = (): Promise<number> =>
+    heading.evaluate((h) => Math.round(h.getBoundingClientRect().height / parseFloat(getComputedStyle(h).lineHeight)));
+  expect(await lines()).toBe(2);
+  // Just above the wide breakpoint the pitch column is at its narrowest.
+  for (const width of [920, 1024]) {
+    await page.setViewportSize({ width, height: 768 });
+    expect(await lines(), `${width}px`).toBe(2);
+  }
   await expect(page.getByRole('region', { name: 'Less starting. More shipping.' })).toBeVisible();
 });
 

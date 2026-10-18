@@ -1,22 +1,28 @@
 /* App-level screen styles. Token values only; components.css stays as the design spec ships it. */
 
 /* ── Sign-in ────────────────────────────────────────────── */
-/* Stage on the left, the sign-in card centred on the right; one column on narrow screens. */
-.fl-signin { container: fl-signin / inline-size; min-height: 100dvh; padding: var(--space-3); box-sizing: border-box; }
+/* One stage behind everything, as a subgrid so the card and the pitch share its tracks.
+   Narrow: a framed stage, the card over the finish line, the pitch below.
+   Wide: the stage bleeds off three edges, tilted 20°, and the card sits on its slanted edge. */
+.fl-signin { container: fl-signin / inline-size; min-height: 100dvh; }
 .fl-signin__layout {
   display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  grid-template-areas: "hero card";
-  gap: var(--space-3);
-  min-height: calc(100dvh - 2 * var(--space-3));
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 100dvh;
+  padding: var(--space-3);
+  box-sizing: border-box;
 }
 .fl-signin__hero {
   --stage: color-mix(in srgb, var(--brand) 12%, var(--surface));
-  grid-area: hero;
-  position: relative;
-  isolation: isolate;
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
   display: grid;
-  align-content: end;
+  grid-template-columns: subgrid;
+  grid-template-rows: subgrid;
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
   overflow: hidden;
   border-radius: var(--radius-md);
   background: var(--stage);
@@ -32,15 +38,17 @@
   background: linear-gradient(to top, var(--stage) 0%, var(--stage) 24%, color-mix(in srgb, var(--stage) 94%, transparent) 38%, transparent 66%);
   pointer-events: none;
 }
-.fl-signin__pitch { position: relative; z-index: 2; display: grid; gap: var(--space-6); padding: var(--space-12); }
+.fl-signin__pitch { grid-column: 1; grid-row: 2; position: relative; z-index: 2; display: grid; gap: var(--space-3); padding: var(--space-6); container-type: inline-size; }
+/* Each line holds at any column width: "More shipping." is about 6.7em wide. */
 .fl-signin .fl-signin__pitch h2 {
   margin: 0;
-  font: 700 calc(var(--text-display-xl-size) * 1.7)/0.98 var(--font-sans);
+  font: 700 min(calc(var(--text-display-xl-size) * 1.1), 14cqi)/0.98 var(--font-sans);
   letter-spacing: -0.04em;
 }
 .fl-signin__pitch h2 span { display: block; }
 .fl-signin .fl-signin__pitch p { max-width: 44ch; color: var(--ink-muted); font: 400 var(--text-title-size)/1.5 var(--font-sans); }
-.fl-signin__panel { grid-area: card; place-self: center; justify-items: center; gap: var(--space-4); width: min(clamp(360px, 26vw, 520px), 100%); box-sizing: border-box; padding: var(--space-12) var(--space-8); text-align: center; }
+/* Clears the pause button above it on short screens. */
+.fl-signin__panel { grid-column: 1; grid-row: 1; place-self: center; position: relative; z-index: 1; margin: calc(var(--control-height) + var(--space-8)) var(--space-3) var(--space-4); justify-items: center; gap: var(--space-4); width: min(clamp(360px, 26vw, 520px), calc(100% - 2 * var(--space-3))); box-sizing: border-box; padding: var(--space-8) var(--space-6); text-align: center; }
 .fl-signin__mark { width: calc(var(--control-height) * 1.4); height: calc(var(--control-height) * 1.4); color: var(--ink); }
 .fl-signin h1 { margin: 0; font: var(--text-display-lg-weight) var(--text-display-lg-size)/var(--text-display-lg-leading) var(--font-sans); letter-spacing: -0.02em; }
 .fl-signin p { margin: 0; }
@@ -48,12 +56,36 @@
 .fl-signin__note { color: var(--ink-muted); font: 400 var(--text-small-size)/var(--text-small-leading) var(--font-sans); max-width: 36ch; }
 .fl-signin__error { color: var(--danger); font: 400 var(--text-small-size)/var(--text-small-leading) var(--font-sans); }
 .fl-signin__error:empty { display: none; }
-@container fl-signin (width < 56rem) {
-  .fl-signin__layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "hero" "card"; grid-template-rows: auto 1fr; }
-  .fl-signin__hero { min-height: clamp(18rem, 46svh, 28rem); }
-  .fl-signin__pitch { gap: var(--space-3); padding: var(--space-6); }
-  .fl-signin .fl-signin__pitch h2 { font-size: calc(var(--text-display-xl-size) * 1.1); }
-  .fl-signin__panel { padding: var(--space-8) var(--space-6); }
+
+@container fl-signin (width >= 56rem) {
+  .fl-signin__layout { grid-template-columns: minmax(0, 1fr) auto; padding: 0; }
+  .fl-signin__hero { border-radius: 0; background: none; }
+  .fl-signin__hero::after { content: none; }
+  /* The plane: its top-right corner sits at 86% across, and it turns 20° about that corner, so its
+     right edge slants down-left behind the card. Sized to cover the page at any aspect ratio. */
+  .fl-signin__hero .fl-lanefield__plane {
+    inset: -8% 14% auto auto;
+    width: 92%;
+    height: calc(108% + 32cqw);
+    transform-origin: 100% 0;
+    transform: rotate(20deg);
+    background: var(--stage);
+  }
+  /* The drawing sets the lane scale; its dividers carry on down the plane. */
+  .fl-signin__hero .fl-lanefield__svg { height: 85%; overflow: visible; }
+  .fl-signin__hero .fl-lanefield__toggle { inset-inline-end: auto; inset-inline-start: var(--space-4); }
+  .fl-signin__pitch { gap: var(--space-6); padding: var(--space-12); }
+  /* Scrim anchored bottom-left so it never spills past the slanted edge onto the page. */
+  .fl-signin__pitch::before {
+    content: "";
+    position: absolute;
+    inset: -70% 0 0 0;
+    z-index: -1;
+    background: radial-gradient(farthest-side at 0 100%, var(--stage) 58%, transparent);
+    pointer-events: none;
+  }
+  .fl-signin .fl-signin__pitch h2 { font-size: min(calc(var(--text-display-xl-size) * 2), 14cqi); }
+  .fl-signin__panel { grid-column: 2; grid-row: 1 / -1; margin: 0 clamp(var(--space-8), 5cqw, 8rem) 16dvh var(--space-8); padding: var(--space-12) var(--space-8); }
 }
 
 .fl-empty { display: grid; justify-items: start; gap: var(--space-3); color: var(--ink-muted); }

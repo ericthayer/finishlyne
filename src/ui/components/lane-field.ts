@@ -22,8 +22,9 @@ export interface Runner {
   readonly still: number;
 }
 
-/** One entry per lane, left to right; null leaves the lane empty. */
+/** One entry per lane, left to right; null leaves the lane empty. Wide enough to cover a tilted, full-bleed stage. */
 export const DEFAULT_RUNNERS: readonly (Runner | null)[] = [
+  { hue: 'warning', pace: 'steady', seconds: 13, phase: 0.3, still: 0.6 },
   { hue: 'positive', pace: 'steady', seconds: 12, phase: 0.9, still: 0.74 },
   { hue: 'status-ready', pace: 'steady', seconds: 11, phase: 0.35, still: 0.9 },
   { hue: 'danger', pace: 'surge', seconds: 14, phase: 0.1, still: 0.58 },
@@ -34,10 +35,17 @@ export const DEFAULT_RUNNERS: readonly (Runner | null)[] = [
   { hue: 'positive', pace: 'stall', seconds: 12, phase: 0.2, still: 0.84 },
   { hue: 'status-paused', pace: 'surge', seconds: 15, phase: 0.65, still: 0.7 },
   { hue: 'danger', pace: 'steady', seconds: 10, phase: 0.05, still: 0.55 },
+  null,
+  { hue: 'brand', pace: 'steady', seconds: 14, phase: 0.7, still: 0.8 },
+  { hue: 'warning', pace: 'stall', seconds: 15, phase: 0.4, still: 0.5 },
+  { hue: 'status-ready', pace: 'steady', seconds: 12, phase: 0.15, still: 0.95 },
+  null,
+  { hue: 'danger', pace: 'surge', seconds: 13, phase: 0.85, still: 0.62 },
+  { hue: 'positive', pace: 'steady', seconds: 11, phase: 0.5, still: 0.7 },
 ];
 
 // Geometry in viewBox units. The finish line sits a third of the way down, as in the mark.
-const WIDTH = 720;
+// The width follows the lane count; lanes bleed 100 past each side so the skew never shows an edge.
 const HEIGHT = 900;
 const FINISH = 300;
 const PITCH = 92;
@@ -51,6 +59,8 @@ const FIRST = -100;
 /**
  * <fl-lane-field [paused]> · fills its positioned parent.
  * `paused` holds every runner where it is; the built-in button toggles it.
+ * Layouts may size, rotate and paint `.fl-lanefield__plane`, and size the drawing inside it
+ * (`.fl-lanefield__svg`, whose dividers run past the viewBox); the button stays upright.
  */
 export class LaneField extends HTMLElement {
   static readonly observedAttributes = ['paused'];
@@ -91,7 +101,9 @@ export class LaneField extends HTMLElement {
     });
     this.#toggle = toggle;
     this.#paintToggle();
-    this.replaceChildren(drawField(this.#runners), toggle);
+    const plane = el('div', 'fl-lanefield__plane');
+    plane.append(drawField(this.#runners));
+    this.replaceChildren(plane, toggle);
   }
 
   #paintToggle(): void {
@@ -105,9 +117,10 @@ export class LaneField extends HTMLElement {
 }
 
 function drawField(runners: readonly (Runner | null)[]): SVGSVGElement {
+  const width = runners.length * PITCH + 2 * FIRST;
   const svg = svgEl('svg', {
     class: 'fl-lanefield__svg',
-    viewBox: `0 0 ${WIDTH} ${HEIGHT}`,
+    viewBox: `0 0 ${width} ${HEIGHT}`,
     preserveAspectRatio: 'xMidYMid slice',
     'aria-hidden': 'true',
     focusable: 'false',
@@ -115,19 +128,24 @@ function drawField(runners: readonly (Runner | null)[]): SVGSVGElement {
   const fieldId = `fl-lanefield-${uid()}`;
 
   // Skewed about the centre so the lanes lean forward and still cover both edges.
-  const track = svgEl('g', { transform: `translate(${WIDTH / 2} ${HEIGHT / 2}) skewX(-14) translate(${-WIDTH / 2} ${-HEIGHT / 2})` });
+  const track = svgEl('g', { transform: `translate(${width / 2} ${HEIGHT / 2}) skewX(-14) translate(${-width / 2} ${-HEIGHT / 2})` });
   runners.forEach((runner, i) => {
     const x = FIRST + i * PITCH;
-    track.append(svgEl('line', { class: 'fl-lanefield__divider', x1: x, y1: -80, x2: x, y2: HEIGHT + 80 }));
+    track.append(divider(x));
     if (runner) track.append(drawLane(runner, x + (PITCH - LANE) / 2, `${fieldId}-${i}`));
   });
   const last = FIRST + runners.length * PITCH;
   track.append(
-    svgEl('line', { class: 'fl-lanefield__divider', x1: last, y1: -80, x2: last, y2: HEIGHT + 80 }),
+    divider(last),
     svgEl('line', { class: 'fl-lanefield__finish', x1: FIRST - PITCH, y1: FINISH, x2: last + PITCH, y2: FINISH }),
   );
   svg.append(track);
   return svg;
+}
+
+/** Runs well past the viewBox so a plane taller than the drawing still shows lanes. */
+function divider(x: number): SVGLineElement {
+  return svgEl('line', { class: 'fl-lanefield__divider', x1: x, y1: -HEIGHT, x2: x, y2: 3 * HEIGHT });
 }
 
 function drawLane(runner: Runner, x: number, trailId: string): SVGGElement {
