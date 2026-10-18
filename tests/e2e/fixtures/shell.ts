@@ -6,11 +6,14 @@ import { DEFAULT_STALE_THRESHOLDS } from '../../../src/domain/staleness.ts';
 import type { GitHubSource } from '../../../src/data/github.ts';
 import type { CaptureInput, ProjectListing } from '../../../src/data/projects.ts';
 import type { CreateDetail } from '../../../src/ui/components/create-project-dialog.ts';
+import { applySavedTheme } from '../../../src/ui/components/theme-toggle.ts';
 
 // Shared fixture shell. The side panel starts closed unless the page URL has `?drawer`,
 // so screen tests are not doubled by the panel's own buttons.
 
 const params = new URLSearchParams(location.search);
+// index.html applies a remembered light theme before first paint; fixture pages do it here so light-theme tests run in light.
+applySavedTheme();
 export const FIXTURE_NOW = new Date('2026-10-10T12:00:00Z');
 
 export interface FixtureShellOptions {

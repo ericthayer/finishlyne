@@ -1,53 +1,53 @@
 /* Finishlyne — generated from tokens.json */
 
 :root, [data-theme="dark"] {
-  --surface: #0d0e10;
-  --surface-raised: #16171a;
-  --surface-sunken: #1e1f23;
-  --line: #26282d;
-  --line-strong: #6c717c;
-  --ink: #f2f3f5;
-  --ink-muted: #9a9fa9;
-  --brand: #f2f3f5;
-  --on-brand: #0d0e10;
-  --signal: #ffc928;
-  --on-signal: #0f1114;
-  --signal-tint: #2a2310;
-  --focus: #8fb4ff;
-  --status-idea: #9a9fa9;
-  --status-ready: #5a8dff;
-  --status-active: #ffc928;
-  --status-paused: #b39dff;
-  --positive: #45cf86;
-  --warning: #ff9a4d;
-  --danger: #ff6b5e;
+  --surface: #0b0a10;
+  --surface-raised: #14121b;
+  --surface-sunken: #1c1926;
+  --line: #292537;
+  --line-strong: #716a8a;
+  --ink: #f5f3fa;
+  --ink-muted: #a49dba;
+  --brand: #c38bff;
+  --on-brand: #12061f;
+  --signal: #c6f432;
+  --on-signal: #0f1404;
+  --signal-tint: #1d240b;
+  --focus: #5fe3ff;
+  --status-idea: #a49dba;
+  --status-ready: #3fd8ff;
+  --status-active: #c6f432;
+  --status-paused: #c08cff;
+  --positive: #35e39f;
+  --warning: #ff9446;
+  --danger: #ff5c8a;
   --focus-on-signal: var(--on-signal);
-  --scrim: #000000b3;
-  --shadow-dialog: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --scrim: #05040ab3;
+  --shadow-dialog: 0 16px 48px rgba(5, 4, 10, 0.65);
 }
 
 [data-theme="light"] {
-  --surface: #f3f4f6;
+  --surface: #f4f2f9;
   --surface-raised: #ffffff;
-  --surface-sunken: #eceef1;
-  --line: #e0e3e8;
-  --line-strong: #7b818c;
-  --ink: #0f1114;
-  --ink-muted: #555b66;
-  --brand: #0f1114;
+  --surface-sunken: #ece9f3;
+  --line: #dfdbea;
+  --line-strong: #7b7490;
+  --ink: #13101b;
+  --ink-muted: #57516b;
+  --brand: #7330e0;
   --on-brand: #ffffff;
-  --signal-tint: #fff3c4;
-  --focus: #1f5fd6;
-  --status-idea: #555b66;
-  --status-ready: #1f5fd6;
-  --status-active: #8a5d00;
-  --status-paused: #6a4fd0;
-  --positive: #0f6e3b;
-  --warning: #9a4800;
-  --danger: #c0281c;
+  --signal-tint: #f0fbc8;
+  --focus: #0c6f8a;
+  --status-idea: #57516b;
+  --status-ready: #005d75;
+  --status-active: #435c00;
+  --status-paused: #6a2fc8;
+  --positive: #036340;
+  --warning: #923e00;
+  --danger: #ac0e45;
   --focus-on-signal: var(--on-signal);
-  --scrim: #0f111480;
-  --shadow-dialog: 0 16px 48px rgba(15, 17, 20, 0.16);
+  --scrim: #13101b80;
+  --shadow-dialog: 0 16px 48px rgba(19, 16, 27, 0.16);
 }
 
 :root {
@@ -58,9 +58,9 @@
   --space-6: clamp(1.5rem, 1.125rem + 0.4688vw, 1.875rem);
   --space-8: clamp(2rem, 1.5rem + 0.625vw, 2.5rem);
   --space-12: clamp(3rem, 2.25rem + 0.9375vw, 3.75rem);
-  --radius-xs: 3px;
-  --radius-sm: 6px;
-  --radius-md: 12px;
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 6px;
   --rail-width: clamp(3.75rem, 2.75rem + 1.25vw, 4.75rem);
   --topbar-height: clamp(3.5rem, 2.5rem + 1.25vw, 4.5rem);
   --aside-width: clamp(300px, 20vw, 520px);
@@ -68,7 +68,7 @@
   --icon-size: clamp(1.125rem, 0.875rem + 0.3125vw, 1.375rem);
   --duration-fast: 120ms;
   --duration-base: 200ms;
-  --font-sans: Geist, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --text-display-xl-size: clamp(2.25rem, 1.25rem + 1.25vw, 3.25rem);
   --text-display-xl-leading: 1.1;

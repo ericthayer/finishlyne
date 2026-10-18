@@ -32,10 +32,10 @@ export interface ProjectRow {
 
 const COLUMNS: readonly { label: string; col?: string }[] = [
   { label: 'Project' },
-  { label: 'Status' },
+  { label: 'Status', col: 'status' },
   { label: 'Next action', col: 'next' },
   { label: 'Agent', col: 'agent' },
-  { label: 'Last progress' },
+  { label: 'Last progress', col: 'progress' },
   { label: 'Updated', col: 'updated' },
 ];
 
@@ -84,17 +84,24 @@ export class ProjectTable extends DataElement<ProjectRow> {
       const nameCell = el('td');
       nameCell.append(name);
 
+      // data-label names each cell when the table shows rows as cards on narrow screens.
       const statusCell = el('td');
+      statusCell.dataset['col'] = 'status';
+      statusCell.dataset['label'] = 'Status';
       statusCell.append(statusPill(r.status));
 
       const next = el('td', 'fl-table__next', r.next || '—');
       next.dataset['col'] = 'next';
+      next.dataset['label'] = 'Next action';
       if (r.next) next.title = r.next;
+      else next.dataset['empty'] = '';
 
       const agent = el('td', 'fl-muted', r.platform || '—');
       agent.dataset['col'] = 'agent';
 
       const progress = el('td');
+      progress.dataset['col'] = 'progress';
+      progress.dataset['label'] = 'Last progress';
       if (r.stale) progress.append(staleBadge(r.stale.level, r.stale.days, r.stale.label));
       else progress.textContent = '—';
 
@@ -105,6 +112,12 @@ export class ProjectTable extends DataElement<ProjectRow> {
       tbody.append(row);
     }
     table.append(thead, tbody);
+    // Explicit roles keep table semantics in WebKit, which drops them when narrow screens restyle the table as cards.
+    table.setAttribute('role', 'table');
+    for (const node of table.querySelectorAll('thead, tbody')) node.setAttribute('role', 'rowgroup');
+    for (const node of table.querySelectorAll('tr')) node.setAttribute('role', 'row');
+    for (const node of table.querySelectorAll('th')) node.setAttribute('role', 'columnheader');
+    for (const node of table.querySelectorAll('td')) node.setAttribute('role', 'cell');
 
     const wrap = el('div', 'fl-tablewrap');
     wrap.tabIndex = 0;
