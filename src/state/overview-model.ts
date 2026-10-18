@@ -166,7 +166,7 @@ export function buildOverview(
         href: `/p/${p.slug}`,
         status: p.status,
         ...(p.nextAction ? { next: p.nextAction } : {}),
-        ...(platform ? { platform: PLATFORM_LABELS[platform] } : {}),
+        ...(platform ? { platform: PLATFORM_LABELS[platform], platformId: platform } : {}),
         ...(s.level !== 'none'
           ? { stale: { level: s.level, days: s.days, ...(p.status === 'paused' ? { label: s.days < 0 ? 'until review' : 'past review date' } : {}) } }
           : {}),

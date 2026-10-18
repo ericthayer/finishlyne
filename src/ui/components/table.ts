@@ -1,4 +1,5 @@
-import type { ProjectStatus } from '../../domain/types.ts';
+import type { AgentPlatformId, ProjectStatus } from '../../domain/types.ts';
+import { agentMark } from './agent-mark.ts';
 import { DataElement, define, el, emit } from './dom.ts';
 import { staleBadge, statusPill, type StaleLevel } from './status.ts';
 
@@ -25,6 +26,8 @@ export interface ProjectRow {
   status: ProjectStatus;
   next?: string;
   platform?: string;
+  /** Draws the platform's brand mark next to `platform`. */
+  platformId?: AgentPlatformId;
   /** Omit for shipped and archived projects; they show no badge. */
   stale?: { level: StaleLevel; days: number; label?: string };
   updated?: string;
@@ -96,8 +99,13 @@ export class ProjectTable extends DataElement<ProjectRow> {
       if (r.next) next.title = r.next;
       else next.dataset['empty'] = '';
 
-      const agent = el('td', 'fl-muted', r.platform || '—');
+      const agent = el('td', 'fl-muted');
       agent.dataset['col'] = 'agent';
+      if (r.platform && r.platformId) {
+        const label = el('span', 'fl-agent');
+        label.append(agentMark(r.platformId), el('span', null, r.platform));
+        agent.append(label);
+      } else agent.textContent = r.platform || '—';
 
       const progress = el('td');
       progress.dataset['col'] = 'progress';

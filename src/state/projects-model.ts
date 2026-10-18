@@ -46,7 +46,7 @@ export function toProjectRows(
         href: `/p/${p.slug}`,
         status: p.status,
         ...(p.nextAction ? { next: p.nextAction } : {}),
-        ...(platform ? { platform: platformName(platform) } : {}),
+        ...(platform ? { platform: platformName(platform), platformId: platform.platform } : {}),
         ...(s.level !== 'none'
           ? { stale: { level: s.level, days: s.days, ...(p.status === 'paused' ? { label: s.days < 0 ? 'until review' : 'past review date' } : {}) } }
           : {}),

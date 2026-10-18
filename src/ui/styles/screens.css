@@ -96,6 +96,9 @@ fl-inbox-list { display: block; }
 .fl-projects__status:not(:empty) { margin: 0; padding: var(--space-3) var(--space-6) 0; color: var(--ink-muted); font: 500 var(--text-label-size)/1.4 var(--font-sans); }
 .fl-table__actions { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); justify-self: start; }
 .fl-table__action { padding-block: 0; min-height: 0; font-size: var(--text-label-size); }
+/* Agent column: 20×20 brand mark before the platform name, in the cell's ink. */
+.fl-agent { display: flex; align-items: center; gap: var(--space-2); }
+.fl-agent__mark { flex: none; inline-size: 20px; block-size: 20px; }
 
 /* App frame: the page scrolls inside .fl-main, not the document (layout fix, overrides components.css). */
 .fl-root { display: flex; flex-direction: column; overflow: hidden; }

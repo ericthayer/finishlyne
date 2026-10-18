@@ -44,6 +44,17 @@ for (const theme of ['dark', 'light'] as const) {
   });
 }
 
+test('Agent column shows a 20×20 decorative brand mark beside the name', async ({ page }) => {
+  await open(page);
+  const devlog = page.getByRole('row', { name: /DevLog/ }).locator('[data-col="agent"]');
+  await expect(devlog).toHaveText('Claude Code');
+  const mark = devlog.locator('svg[data-mark="claude_code"]');
+  await expect(mark).toHaveAttribute('aria-hidden', 'true');
+  expect(await mark.boundingBox()).toMatchObject({ width: 20, height: 20 });
+  await expect(page.getByRole('row', { name: /Stacker/ }).locator('[data-col="agent"] svg[data-mark="bolt"]')).toBeAttached();
+  await expect(page.getByRole('row', { name: /Univia/ }).locator('[data-col="agent"]')).toHaveText('—');
+});
+
 test('searching narrows the list and keeps focus in the field', async ({ page }) => {
   await open(page);
   const search = page.getByRole('searchbox', { name: 'Search projects', exact: true });
