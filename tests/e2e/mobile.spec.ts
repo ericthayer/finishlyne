@@ -101,6 +101,27 @@ test('the account menu opens above the tab bar', async ({ page }) => {
   expect((menuBox?.x ?? 0) + (menuBox?.width ?? 0)).toBeLessThanOrEqual(390);
 });
 
+test('on phones the theme toggle moves from the tab bar into the account menu', async ({ page }) => {
+  await open(page, 'overview');
+  await expect(page.locator('.fl-rail').getByRole('button', { name: /Switch to/ })).toBeHidden();
+  await page.locator('[data-slot="avatar"]').tap();
+  const menu = page.locator('#fl-account');
+  await menu.getByRole('button', { name: 'Switch to light theme' }).tap();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(menu).toBeHidden();
+  await page.locator('[data-slot="avatar"]').tap();
+  await expect(menu.getByRole('button', { name: 'Switch to dark theme' })).toBeVisible();
+  await axe(page);
+});
+
+test('on wider screens the theme toggle stays in the rail, not the account menu', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await open(page, 'overview');
+  await expect(page.locator('.fl-rail').getByRole('button', { name: 'Switch to light theme' })).toBeVisible();
+  await page.locator('[data-slot="avatar"]').click();
+  await expect(page.locator('#fl-account').getByRole('button', { name: /Switch to/ })).toBeHidden();
+});
+
 test('table rows show as cards with every row in reach, no sideways swipe', async ({ page }) => {
   await open(page, 'projects');
   const wrap = page.locator('.fl-tablewrap');

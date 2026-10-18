@@ -42,6 +42,8 @@
           <nav class="fl-account__links" aria-label="Account">
             <a href="/activity" data-route="activity"><fl-icon name="activity"></fl-icon>Recent activity</a>
             <a href="/settings" data-route="settings"><fl-icon name="settings"></fl-icon>Settings</a>
+            <!-- Phones only: the tab bar has no room for the theme toggle, so it lives here. -->
+            <fl-theme-toggle class="fl-account__theme" labelled></fl-theme-toggle>
             <button type="button" data-action="sign-out"><fl-icon name="logout"></fl-icon>Sign out</button>
           </nav>
           <p class="fl-account__version" data-slot="version"></p>

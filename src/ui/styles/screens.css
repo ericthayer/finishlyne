@@ -187,6 +187,7 @@ fl-inbox-list { display: block; }
 .fl-account__links :is(a, button):hover, .fl-account__links a[aria-current="page"] { background: var(--surface-sunken); }
 .fl-account__links :is(a, button):focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .fl-account__links fl-icon { width: var(--icon-size); height: var(--icon-size); color: var(--ink-muted); }
+.fl-account__links .fl-account__theme { display: none; }
 .fl-account__version { margin: 0; padding: var(--space-2) var(--space-3) var(--space-1); color: var(--ink-muted); font: 400 var(--text-label-size)/var(--text-label-leading) var(--font-mono); }
 
 /* ── Side panel: pushes main over instead of covering it ── */
@@ -257,9 +258,10 @@ fl-inbox-list { display: block; }
     border-top: 1px solid var(--line);
     background: var(--surface);
   }
-  .fl-rail__mark { display: none; }
+  .fl-rail__mark, .fl-rail__foot fl-theme-toggle { display: none; }
+  .fl-account__links .fl-account__theme { display: grid; }
   .fl-rail nav { flex: 1 1 auto; flex-direction: row; justify-content: space-around; gap: 0; }
-  .fl-rail__foot { flex-direction: row; gap: var(--space-1); margin-top: 0; padding-left: var(--space-2); border-left: 1px solid var(--line); }
+  .fl-rail__foot { flex-direction: row; gap: var(--space-1); margin-top: 0; padding-left: var(--space-2); }
   .fl-rail__foot .fl-avatar { margin-top: 0; }
   .fl-rail nav a.fl-iconbtn {
     flex: 1 1 0;
@@ -287,8 +289,6 @@ fl-inbox-list { display: block; }
     font: 500 0.6875rem/1.2 var(--font-sans);
   }
   .fl-rail nav a.fl-iconbtn { text-decoration: none; }
-  /* The theme toggle's hover name opens upward instead of off the right edge. */
-  .fl-rail__foot .fl-iconbtn[aria-label]:is(:hover, :focus-visible)::after { inset: auto auto calc(100% + var(--space-2)) 50%; translate: -50% 0; }
   .fl-account { inset: auto max(var(--space-2), env(safe-area-inset-right)) calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-2)) auto; width: min(18rem, 100vw - var(--space-4)); }
 
   /* The side panel sheet covers the full height, so it pads itself clear of the notch and home indicator. */

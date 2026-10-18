@@ -14,17 +14,31 @@ export function applySavedTheme(root: HTMLElement = document.documentElement): v
   }
 }
 
-/** <fl-theme-toggle> · flips data-theme on <html> · fires fl-theme-change {theme}. */
+/**
+ * <fl-theme-toggle [labelled]> · flips data-theme on <html> · fires fl-theme-change {theme}.
+ * `labelled` renders a menu row with visible text instead of an icon button. Every toggle on the page stays in sync.
+ */
 export class ThemeToggle extends HTMLElement {
+  #sync: (() => void) | null = null;
+
   connectedCallback(): void {
     const root = document.documentElement;
-    const button = el('button', 'fl-iconbtn');
+    const labelled = this.hasAttribute('labelled');
+    const button = el('button', labelled ? null : 'fl-iconbtn');
     button.type = 'button';
     const paint = (): void => {
       const light = root.dataset['theme'] === 'light';
-      button.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
-      button.replaceChildren(icon(light ? 'moon' : 'sun'));
+      const name = light ? 'Switch to dark theme' : 'Switch to light theme';
+      if (labelled) {
+        button.removeAttribute('aria-label');
+        button.replaceChildren(icon(light ? 'moon' : 'sun'), name);
+      } else {
+        button.setAttribute('aria-label', name);
+        button.replaceChildren(icon(light ? 'moon' : 'sun'));
+      }
     };
+    this.#sync = paint;
+    document.addEventListener('fl-theme-change', paint);
     button.addEventListener('click', () => {
       const theme: Theme = root.dataset['theme'] === 'light' ? 'dark' : 'light';
       root.dataset['theme'] = theme;
@@ -38,6 +52,11 @@ export class ThemeToggle extends HTMLElement {
     });
     paint();
     this.replaceChildren(button);
+  }
+
+  disconnectedCallback(): void {
+    if (this.#sync) document.removeEventListener('fl-theme-change', this.#sync);
+    this.#sync = null;
   }
 }
 
