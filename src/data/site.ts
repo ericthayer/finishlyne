@@ -54,12 +54,7 @@ export function supabaseSite(backend: Backend, config: SupabaseConfig): SiteSour
     return out as T;
   };
 
-  const fn = async <T>(body: unknown): Promise<T> =>
-    call<T>('/functions/v1/netlify', {
-      method: 'POST',
-      headers: await headers({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(body),
-    });
+  const fn = <T>(body: unknown): Promise<T> => backend.invoke<T>('netlify', body);
 
   const remove = async (paths: readonly string[]): Promise<void> => {
     if (!paths.length) return;
