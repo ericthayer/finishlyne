@@ -107,6 +107,8 @@ fl-inbox-list { display: block; }
    title | search | actions; the avatar at the foot of the rail opens the account menu. Overrides the two-row grid in components.css. */
 .fl-app { grid-template-rows: minmax(0, 1fr); grid-template-areas: "rail body"; }
 .fl-rail__foot .fl-avatar { margin-top: var(--space-2); }
+/* Clear the notch, status bar and home indicator when installed to a home screen (viewport-fit=cover); zero elsewhere. */
+.fl-app { box-sizing: border-box; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 .fl-btn--icon { padding-inline: 0; width: var(--control-height); }
 
 /* Ship dialog: reuses the .fl-check list; these only reset the fieldset and style the note. */
@@ -247,8 +249,7 @@ fl-inbox-list { display: block; }
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) auto;
     grid-template-areas: "body" "rail";
-    box-sizing: border-box;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+    padding-bottom: 0;
   }
   .fl-rail {
     flex-direction: row;
@@ -314,7 +315,7 @@ fl-inbox-list { display: block; }
   .fl-table td { display: block; min-width: 0; padding: 0; border: 0; }
   .fl-table td:first-child { grid-column: 1 / -1; }
   .fl-table td[data-col="next"] { display: block; order: 1; grid-column: 1 / -1; max-width: none; white-space: normal; }
-  .fl-table td[data-label="Status"] { order: 2; }
+  .fl-table td[data-col="status"] { order: 2; }
   .fl-table td[data-col="progress"] { order: 3; }
   .fl-table td[data-col="next"][data-empty], .fl-table [data-col="agent"], .fl-table [data-col="updated"] { display: none; }
   .fl-table td[data-col="progress"] { justify-self: end; }

@@ -47,7 +47,7 @@ export class ThemeToggle extends HTMLElement {
       } catch {
         // Storage blocked: the choice lasts for this page only.
       }
-      paint();
+      // The document listener repaints every toggle, this one included.
       emit(this, 'fl-theme-change', { theme });
     });
     paint();
