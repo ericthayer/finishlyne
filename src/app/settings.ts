@@ -1,14 +1,12 @@
-import type { GitHubSource } from '../data/github.ts';
 import type { ProjectsRepo } from '../data/projects.ts';
 import { wipCapError } from '../domain/project-fields.ts';
 import { mountSettings } from '../ui/screens/settings.ts';
 import { saveError } from './errors.ts';
-import { showGitHubSettings } from './settings-github.ts';
 
-export type SettingsSource = Pick<ProjectsRepo, 'loadWipCap' | 'saveWipCap' | 'listProjects'>;
+export type SettingsSource = Pick<ProjectsRepo, 'loadWipCap' | 'saveWipCap'>;
 
-/** Mounts Settings into `main`: the WIP cap and, when `github` is given, GitHub. Stale thresholds arrive later. */
-export function showSettings(main: HTMLElement, repo: SettingsSource, github?: GitHubSource): void {
+/** Mounts Settings into `main`: the WIP cap. Stale thresholds arrive later. */
+export function showSettings(main: HTMLElement, repo: SettingsSource): void {
   const screen = mountSettings(main, {
     onSave(raw: string) {
       const problem = wipCapError(raw);
@@ -43,6 +41,5 @@ export function showSettings(main: HTMLElement, repo: SettingsSource, github?: G
     }
   };
 
-  if (github) showGitHubSettings(main, github, repo);
   void load();
 }

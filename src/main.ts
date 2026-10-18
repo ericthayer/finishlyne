@@ -52,8 +52,10 @@ function start(root: HTMLElement, backend: Backend): void {
       );
     }
     else if (route.name === 'settings') {
-      lazy(route, Promise.all([import('./app/settings.ts'), import('./data/github.ts')]), ([m, d], s) =>
-        m.showSettings(s.main, repo, d.supabaseGitHub(backend)),
+      lazy(route, import('./app/settings.ts'), (m, s) => m.showSettings(s.main, repo));
+    } else if (route.name === 'github') {
+      lazy(route, Promise.all([import('./app/github.ts'), import('./data/github.ts')]), ([m, d], s) =>
+        m.showGitHub(s.main, d.supabaseGitHub(backend), repo),
       );
     }
     else renderPlaceholder(shell.main, route.name);

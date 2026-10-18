@@ -97,14 +97,14 @@ export function mountIssues(panel: HTMLElement): (state: IssuesState) => void {
     } else if (state.kind === 'not-connected') {
       body.replaceChildren(
         empty('GitHub is not connected', 'Install the Finishlyne App on your account to see pull requests and issues here.', {
-          href: '/settings',
-          label: 'Open Settings',
+          href: '/github',
+          label: 'Open GitHub',
         }),
       );
     } else if (state.kind === 'no-links') {
       body.replaceChildren(
-        empty('No linked repos', 'Link a repo to a project in Settings, and its open pull requests and issues show up here.', {
-          href: '/settings',
+        empty('No linked repos', 'Link a repo to a project on the GitHub page, and its open pull requests and issues show up here.', {
+          href: '/github',
           label: 'Link a repo',
         }),
       );

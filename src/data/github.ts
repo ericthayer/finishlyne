@@ -15,6 +15,24 @@ export interface GitHubRepo {
   url: string;
   private: boolean;
   pushedAt: string | null;
+  description: string | null;
+  language: string | null;
+  archived: boolean;
+  /** Open issues plus open PRs, as GitHub counts them. */
+  openCount: number;
+}
+
+/** One repo in depth, fetched live from GitHub when its row is opened on the GitHub page. */
+export interface RepoDetails {
+  fullName: string;
+  url: string;
+  defaultBranch: string;
+  pulls: { number: number; title: string; url: string; draft: boolean; author: string; branch: string; reviewers: number; labels: string[]; updatedAt: string }[];
+  issues: { number: number; title: string; url: string; author: string; comments: number; labels: string[]; updatedAt: string }[];
+  /** Latest push per branch, newest first. */
+  branches: { name: string; sha: string; by: string; at: string }[];
+  release: { tag: string; name: string; url: string; publishedAt: string | null } | null;
+  lastCommit: { sha: string; message: string; url: string; at: string | null } | null;
 }
 
 export interface RepoLinkRecord {
@@ -35,10 +53,11 @@ export interface GitHubItem {
   updatedAt: string;
 }
 
-/** The seam Settings and the side panel talk to. Supabase in the app, in-memory in e2e fixtures. */
+/** The seam the GitHub page and the side panel talk to. Supabase in the app, in-memory in e2e fixtures. */
 export interface GitHubSource {
   status(): Promise<GitHubStatus>;
   repos(): Promise<GitHubRepo[]>;
+  details(repoId: number): Promise<RepoDetails>;
   links(): Promise<RepoLinkRecord[]>;
   items(): Promise<GitHubItem[]>;
   /** Links the repo to one project (moving it off any other) and syncs it. */
@@ -77,6 +96,7 @@ export function supabaseGitHub(backend: Backend): GitHubSource {
       const out = await backend.invoke<{ repos?: GitHubRepo[] } & Partial<GitHubStatus>>('github', { action: 'repos' });
       return out.repos ?? [];
     },
+    details: (repoId) => backend.invoke<RepoDetails>('github', { action: 'details', repoId }),
     async links() {
       const { data, error } = await db
         .from('repo_links')

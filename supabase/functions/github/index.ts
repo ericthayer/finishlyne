@@ -1,12 +1,14 @@
 // github: the browser's only route to GitHub. Mints installation tokens server-side, so no
-// GitHub token reaches the client (SPEC §7). Actions: status, repos, link, sync. Read-only
+// GitHub token reaches the client (SPEC §7). Actions: status, repos, details, link, sync. Read-only
 // toward GitHub; writes go to the Finishlyne cache tables with the service role.
 import { findInstallation, get, GitHubError, installationToken, type AppConfig } from './app.ts';
+import { repoDetails } from './details.ts';
 import { addPushEvent, linkRepo, listLinks, ownsProject, replaceIssues, updateLink, type Db, type IssueRow, type LinkRow } from './db.ts';
 
 type Action =
   | { action: 'status' }
   | { action: 'repos' }
+  | { action: 'details'; repoId: number }
   | { action: 'link'; projectId: string; repoId: number }
   | { action: 'sync' };
 
@@ -17,6 +19,10 @@ interface GhRepo {
   private: boolean;
   pushed_at: string | null;
   default_branch: string;
+  description: string | null;
+  language: string | null;
+  archived: boolean;
+  open_issues_count: number;
 }
 
 interface GhIssue {
@@ -52,6 +58,7 @@ function parse(body: unknown): Action | null {
   if (typeof body !== 'object' || body === null) return null;
   const b = body as Record<string, unknown>;
   if (b['action'] === 'status' || b['action'] === 'repos' || b['action'] === 'sync') return { action: b['action'] };
+  if (b['action'] === 'details' && typeof b['repoId'] === 'number') return { action: 'details', repoId: b['repoId'] };
   if (b['action'] === 'link' && typeof b['projectId'] === 'string' && typeof b['repoId'] === 'number') {
     return { action: 'link', projectId: b['projectId'], repoId: b['repoId'] };
   }
@@ -146,8 +153,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (input.action === 'repos') {
       const repos = await installationRepos(token);
       return json({
-        repos: repos.map((r) => ({ id: r.id, fullName: r.full_name, url: r.html_url, private: r.private, pushedAt: r.pushed_at })),
+        repos: repos.map((r) => ({
+          id: r.id,
+          fullName: r.full_name,
+          url: r.html_url,
+          private: r.private,
+          pushedAt: r.pushed_at,
+          description: r.description,
+          language: r.language,
+          archived: r.archived,
+          openCount: r.open_issues_count,
+        })),
       });
+    }
+    if (input.action === 'details') {
+      // 404 here means the repo is not granted to this installation.
+      return json(await repoDetails(token, input.repoId));
     }
     const at = new Date().toISOString();
     if (input.action === 'link') {
@@ -169,7 +190,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const failed = results.filter((r) => r.status === 'rejected').length;
     return json({ ok: true, syncedAt: at, synced: links.length - failed, failed });
   } catch (error) {
-    const status = error instanceof GitHubError && error.status === 401 ? 502 : 500;
+    const status = error instanceof GitHubError && error.status === 404 ? 404 : error instanceof GitHubError && error.status === 401 ? 502 : 500;
     console.error(error);
     return json({ error: error instanceof Error ? error.message : String(error) }, status);
   }

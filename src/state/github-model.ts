@@ -3,7 +3,7 @@ import type { GitHubItem, GitHubRepo, RepoLinkRecord } from '../data/github.ts';
 import type { ProjectStatus } from '../domain/types.ts';
 import { relativeTime } from './overview-model.ts';
 
-// GitHub views: the side panel's Issues tab and the Settings repo list. Pure, so it is unit-tested.
+// GitHub views: the side panel's Issues tab and the GitHub page's repo list. Pure, so it is unit-tested.
 
 /** Opening the Issues tab refreshes links older than this (SPEC §7). */
 export const SYNC_AFTER_MS = 15 * 60_000;
@@ -80,8 +80,13 @@ export function buildIssues(
     });
   }
   groups.sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
+  return { groups: groups.map(({ rank: _rank, ...g }) => g), synced: syncedLabel(links, now) };
+}
+
+/** "Synced 4 min ago", from the oldest link; null before the first sync. */
+export function syncedLabel(links: readonly RepoLinkRecord[], now: Date): string | null {
   const synced = links.map((l) => l.lastSyncedAt).filter((t): t is string => t !== null).sort()[0];
-  return { groups: groups.map(({ rank: _rank, ...g }) => g), synced: synced ? `Synced ${relativeTime(synced, now)}` : null };
+  return synced ? `Synced ${relativeTime(synced, now)}` : null;
 }
 
 export interface RepoRow {
@@ -89,7 +94,10 @@ export interface RepoRow {
   fullName: string;
   url: string;
   private: boolean;
-  pushed: string;
+  archived: boolean;
+  description: string | null;
+  /** "TypeScript · 3 open · Pushed 2 days ago" */
+  facts: string;
   /** The link to move or remove; null when the repo is not linked. */
   linkId: string | null;
   /** '' when not linked. */
@@ -104,7 +112,11 @@ export function buildRepoRows(repos: readonly GitHubRepo[], links: readonly Repo
       fullName: r.fullName,
       url: r.url,
       private: r.private,
-      pushed: r.pushedAt ? `Pushed ${relativeTime(r.pushedAt, now)}` : 'No pushes yet',
+      archived: r.archived,
+      description: r.description,
+      facts: [r.language, r.openCount ? `${r.openCount} open` : '', r.pushedAt ? `Pushed ${relativeTime(r.pushedAt, now)}` : 'No pushes yet']
+        .filter(Boolean)
+        .join(' · '),
       linkId: link?.id ?? null,
       projectId: link?.projectId ?? '',
     };
