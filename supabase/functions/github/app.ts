@@ -31,31 +31,38 @@ function der(tag: number, body: Uint8Array): Uint8Array<ArrayBuffer> {
   return new Uint8Array([tag, ...derLength(body.length), ...body]);
 }
 
-/** GitHub hands out PKCS#1 keys ("BEGIN RSA PRIVATE KEY"); WebCrypto wants PKCS#8. */
-function toPkcs8(pem: string): Uint8Array<ArrayBuffer> {
-  const pkcs1 = !pem.includes('BEGIN PRIVATE KEY');
-  const body = pem.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
-  const bytes = Uint8Array.from(atob(body), (c) => c.charCodeAt(0));
-  if (!pkcs1) return bytes;
+/** WebCrypto imports PKCS#8 only; wraps a PKCS#1 RSA key in the PKCS#8 envelope. */
+function pkcs1ToPkcs8(pkcs1: Uint8Array<ArrayBuffer>): Uint8Array<ArrayBuffer> {
   // SEQUENCE { INTEGER 0, SEQUENCE { OID rsaEncryption, NULL }, OCTET STRING { pkcs1 } }
   const version = new Uint8Array([0x02, 0x01, 0x00]);
   const algorithm = new Uint8Array([0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00]);
-  const key = der(0x04, bytes);
-  return der(0x30, new Uint8Array([...version, ...algorithm, ...key]));
+  return der(0x30, new Uint8Array([...version, ...algorithm, ...der(0x04, pkcs1)]));
+}
+
+/** The secret may arrive as PKCS#1 or PKCS#8, with literal "\n" escapes or real newlines. */
+function keyDer(pem: string): Uint8Array<ArrayBuffer> {
+  const body = pem.replace(/\\n/g, '\n').replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
+  return Uint8Array.from(atob(body), (c) => c.charCodeAt(0));
+}
+
+const RSA_PARAMS = { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' } as const;
+
+/** Tries the key as PKCS#8 first, then as PKCS#1 (what GitHub issues). */
+async function importKey(pem: string): Promise<CryptoKey> {
+  const der = keyDer(pem);
+  try {
+    return await crypto.subtle.importKey('pkcs8', der, RSA_PARAMS, false, ['sign']);
+  } catch {
+    return await crypto.subtle.importKey('pkcs8', pkcs1ToPkcs8(der), RSA_PARAMS, false, ['sign']);
+  }
 }
 
 let signingKey: Promise<CryptoKey> | null = null;
 
 async function appJwt(config: AppConfig): Promise<string> {
-  signingKey ??= crypto.subtle.importKey(
-    'pkcs8',
-    toPkcs8(config.privateKey.replace(/\\n/g, '\n')),
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  ).catch((error: unknown) => {
+  signingKey ??= importKey(config.privateKey).catch((): never => {
     signingKey = null; // a bad key is reported, not cached, so fixing the secret takes effect
-    throw error;
+    throw new GitHubError(0, 'GITHUB_APP_PRIVATE_KEY is not a usable RSA key. Paste the whole .pem file GitHub gave you.');
   });
   const now = Math.floor(Date.now() / 1000);
   const enc = new TextEncoder();
