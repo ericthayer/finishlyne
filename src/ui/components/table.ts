@@ -36,7 +36,7 @@ const COLUMNS: readonly { label: string; col?: string }[] = [
   { label: 'Next action', col: 'next' },
   { label: 'Agent', col: 'agent' },
   { label: 'Last progress' },
-  { label: 'Updated' },
+  { label: 'Updated', col: 'updated' },
 ];
 
 /** <fl-project-table caption> · `.rows` = ProjectRow[] */
@@ -99,7 +99,9 @@ export class ProjectTable extends DataElement<ProjectRow> {
       else progress.textContent = '—';
 
       const row = el('tr');
-      row.append(nameCell, statusCell, next, agent, progress, el('td', 'fl-muted', r.updated ?? ''));
+      const updated = el('td', 'fl-muted', r.updated ?? '');
+      updated.dataset['col'] = 'updated';
+      row.append(nameCell, statusCell, next, agent, progress, updated);
       tbody.append(row);
     }
     table.append(thead, tbody);

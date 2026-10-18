@@ -42,8 +42,13 @@
         </div>
         <div class="fl-app__body" data-slot="body">
           <main class="fl-main" id="main" tabindex="-1" data-slot="main"></main>
-          <aside class="fl-drawer" id="fl-drawer" aria-label="Side panel" data-slot="drawer"></aside>
+          <aside class="fl-drawer" id="fl-drawer" aria-label="Side panel" data-slot="drawer">
+            <button class="fl-btn fl-btn--quiet fl-btn--icon fl-drawer__close" type="button" aria-label="Close side panel" title="Close side panel" data-action="drawer-close"><fl-icon name="close"></fl-icon></button>
+            <div class="fl-drawer__content" data-slot="drawer-content"></div>
+          </aside>
         </div>
+        <!-- Phones only: covers the page while the side panel overlays it; a tap closes the panel. -->
+        <div class="fl-drawer__scrim" data-slot="drawer-scrim" hidden></div>
         <fl-capture-dialog data-slot="capture"></fl-capture-dialog>
         <fl-create-project-dialog data-slot="create"></fl-create-project-dialog>
       </div>
