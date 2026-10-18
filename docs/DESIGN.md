@@ -20,6 +20,7 @@ Dark-first command center. A violet-black shell that fills the screen (icon rail
 | Shape | 2/3/6px radii (tightened from 3/6/12 on 2026-10-18), 1px hairlines, no panel shadows | Crisper, more technical edges; elevation is reserved for dialogs |
 | Overview | KPI strip, Now lanes, Finish rate, Projects by status, Projects table, Recent activity | Decision screen, not a kanban board |
 | Celebration | None | Shipping is its own reward; no gamification |
+| Sign-in stage | Split screen: a dark stage on the left (dark in both themes) with `<fl-lane-field>`, the mark at stage size. Skewed lanes, a lime finish line, and runners in the status hues that keep a steady pace, stall and restart, or kick to the line, lighting their lane as they cross it. The sign-in card sits on the right | The one place with ambient motion. Slow loops (10–17s), CSS only, a Pause button (WCAG 2.2.2) and a still frame under reduced motion. A scrim keeps the pitch on a near-solid field. Lit lanes are the reward, so no confetti |
 
 ## Principles
 

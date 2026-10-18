@@ -76,14 +76,25 @@
 
     <template id="tpl-signin">
       <main class="fl-signin" aria-labelledby="signin-title">
-        <section class="fl-panel fl-signin__panel">
-          <svg class="fl-signin__mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 3v18 M12 3v18 M19 3v18" /><path d="M3 8h18" stroke="var(--signal)" /></svg>
-          <h1 id="signin-title">Finishlyne</h1>
-          <p class="fl-muted">Ideas are cheap. Finished projects are valuable.</p>
-          <button class="fl-btn fl-btn--primary" type="button" data-action="sign-in"><fl-icon name="github"></fl-icon>Continue with GitHub</button>
-          <p class="fl-signin__note">Signs you in with the Finishlyne GitHub App. Your projects are private to your account.</p>
-          <p class="fl-signin__error" role="alert" data-slot="error"></p>
-        </section>
+        <div class="fl-signin__layout">
+          <!-- First in the DOM so the sign-in button is the first stop; the grid draws it on the right. -->
+          <section class="fl-panel fl-signin__panel">
+            <svg class="fl-signin__mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 3v18 M12 3v18 M19 3v18" /><path d="M3 8h18" stroke="var(--signal)" /></svg>
+            <h1 id="signin-title">Finishlyne</h1>
+            <p class="fl-muted">Ideas are cheap. Finished projects are valuable.</p>
+            <button class="fl-btn fl-btn--primary" type="button" data-action="sign-in"><fl-icon name="github"></fl-icon>Continue with GitHub</button>
+            <p class="fl-signin__note">Signs you in with the Finishlyne GitHub App. Your projects are private to your account.</p>
+            <p class="fl-signin__error" role="alert" data-slot="error"></p>
+          </section>
+          <!-- The stage is dark in both themes: the lanes are drawn for a dark field. -->
+          <section class="fl-signin__hero" data-theme="dark" aria-labelledby="signin-pitch">
+            <fl-lane-field></fl-lane-field>
+            <div class="fl-signin__pitch">
+              <h2 id="signin-pitch"><span>Less starting.</span> <span>More shipping.</span></h2>
+              <p>Capture ideas, cap what's in play, and pick any project back up with a brief you can paste straight into your coding agent.</p>
+            </div>
+          </section>
+        </div>
       </main>
     </template>
 

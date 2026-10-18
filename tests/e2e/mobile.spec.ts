@@ -164,3 +164,14 @@ for (const theme of ['dark', 'light'] as const) {
     await axe(page);
   });
 }
+
+test('sign-in stacks the stage above the card and fits without sideways scrolling', async ({ page }) => {
+  await page.goto('/');
+  const card = page.locator('.fl-signin__panel');
+  await expect(page.getByRole('button', { name: 'Continue with GitHub' })).toBeVisible();
+  const stage = await page.locator('.fl-signin__hero').boundingBox();
+  const box = await card.boundingBox();
+  expect(stage && box && box.y >= stage.y + stage.height).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await axe(page);
+});
