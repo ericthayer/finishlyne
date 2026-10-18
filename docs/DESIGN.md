@@ -17,7 +17,7 @@ Dark-first command center. A violet-black shell that fills the screen (icon rail
 | Primary | `brand` electric violet button (deep violet in light), one per view | Separates "act" from "attend"; dark text on violet in dark, white in light |
 | Status | Idea grey-violet, Ready cyan, Active lime, Paused violet, Shipped mint; warning orange, danger hot pink | Saturated on dark; deepened in light to hold 4.5:1 as text and inside 16% tinted chips |
 | Type | Plus Jakarta Sans and Geist Mono, self-hosted variable woff2, Latin subset | Geometric and friendly like the references, keeps tabular figures; ~50 KB of fonts, sans preloaded, `font-display: swap` |
-| Shape | 3/6/12px radii, 1px hairlines, no panel shadows | Elevation is reserved for dialogs |
+| Shape | 2/3/6px radii (tightened from 3/6/12 on 2026-10-18), 1px hairlines, no panel shadows | Crisper, more technical edges; elevation is reserved for dialogs |
 | Overview | KPI strip, Now lanes, Finish rate, Projects by status, Projects table, Recent activity | Decision screen, not a kanban board |
 | Celebration | None | Shipping is its own reward; no gamification |
 
