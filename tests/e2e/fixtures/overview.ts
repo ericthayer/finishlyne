@@ -4,6 +4,7 @@ import '../../../src/ui/styles/screens.css';
 import '../../../src/ui/components/index.ts';
 import indexHtml from '../../../index.html?raw';
 import { drawerSource, fixtureShell } from './shell.ts';
+import { memoryGitHub } from './memory-github.ts';
 import { buildOverview } from '../../../src/state/overview-model.ts';
 import { renderOverview } from '../../../src/ui/screens/overview.ts';
 import { project } from '../../fixtures.ts';
@@ -12,7 +13,8 @@ import { project } from '../../fixtures.ts';
 const parsed = new DOMParser().parseFromString(indexHtml, 'text/html');
 for (const tpl of parsed.querySelectorAll('template')) document.body.append(document.importNode(tpl, true));
 
-const empty = new URLSearchParams(location.search).has('empty');
+const params = new URLSearchParams(location.search);
+const empty = params.has('empty');
 const projects = empty
   ? []
   : [
@@ -39,7 +41,14 @@ const model = buildOverview(
 const host = document.getElementById('app');
 if (host) {
   const listings = projects.map((p) => ({ project: p, platform: null, repo: null }));
-  const shell = fixtureShell(host, 'overview', { drawer: drawerSource(listings) });
+  // `?github` links Finishline to a repo with an open PR and issue; `?github=none` connects with no links.
+  const mode = params.get('github');
+  const github =
+    mode === null ? undefined
+    : memoryGitHub(mode, null, mode === 'none' ? [] : [
+        { id: 'l1', projectId: 'a', githubRepoId: 101, fullName: 'ericthayer/finishline', lastPushAt: '2026-10-10T09:00:00Z', lastSyncedAt: '2026-10-10T11:56:00Z' },
+      ]);
+  const shell = fixtureShell(host, 'overview', { drawer: drawerSource(listings), ...(github ? { github } : {}) });
   renderOverview(shell.main, model);
   document.body.dataset['ready'] = 'true';
 }

@@ -5,7 +5,7 @@ import { saveError } from './errors.ts';
 
 export type SettingsSource = Pick<ProjectsRepo, 'loadWipCap' | 'saveWipCap'>;
 
-/** Mounts Settings into `main`: the WIP cap today; GitHub and stale thresholds arrive later. */
+/** Mounts Settings into `main`: the WIP cap. Stale thresholds arrive later. */
 export function showSettings(main: HTMLElement, repo: SettingsSource): void {
   const screen = mountSettings(main, {
     onSave(raw: string) {

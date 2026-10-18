@@ -1,6 +1,6 @@
 // History API router with a tiny path matcher (`/p/:slug`). No dependency.
 
-export type RouteName = 'overview' | 'projects' | 'project' | 'inbox' | 'archive' | 'activity' | 'settings' | 'not-found';
+export type RouteName = 'overview' | 'projects' | 'project' | 'inbox' | 'archive' | 'activity' | 'settings' | 'github' | 'not-found';
 
 export interface Route {
   name: RouteName;
@@ -15,6 +15,7 @@ const TABLE: readonly [RouteName, string][] = [
   ['archive', '/archive'],
   ['activity', '/activity'],
   ['settings', '/settings'],
+  ['github', '/github'],
 ];
 
 export function match(pathname: string): Route {

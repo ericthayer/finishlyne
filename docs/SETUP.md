@@ -37,6 +37,8 @@ GitHub → Settings → Developer settings → GitHub Apps → New GitHub App.
 Then:
 - Generate a **private key**; store it in Supabase function secrets as `GITHUB_APP_PRIVATE_KEY` (**secret**), with `GITHUB_APP_ID`.
 - In Supabase → Authentication → Providers → GitHub, paste the App's **Client ID** and **Client secret** (**secret**).
+- Install the App on your account (GitHub App page → **Install App**) and pick the repos Finishlyne may read.
+- Deploy the `github` Edge Function (`supabase/functions/github`): `npx supabase functions deploy github --no-verify-jwt`. It checks the caller's session itself. The GitHub page (rail → GitHub, `/github`) then shows your repos; until the two secrets above exist it says which are missing.
 
 ## 3. Netlify site
 

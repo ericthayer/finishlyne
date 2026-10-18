@@ -52,7 +52,13 @@ function empty(title: string, body: string): HTMLElement {
   return box;
 }
 
-export function mountDrawer(host: HTMLElement, onAction: (id: string, action: PanelAction) => void): DrawerScreen {
+/** `onIssues` runs each time the Issues tab is shown; without it the tab keeps its empty state. */
+export function mountDrawer(
+  host: HTMLElement,
+  onAction: (id: string, action: PanelAction) => void,
+  onIssues?: (panel: HTMLElement) => void,
+): DrawerScreen {
+  let issuesPanel: HTMLElement | null = null;
   const status = el('p', 'fl-drawer__status');
   status.setAttribute('aria-live', 'polite');
   const ui = tabs<DrawerTab>(
@@ -63,6 +69,7 @@ export function mountDrawer(host: HTMLElement, onAction: (id: string, action: Pa
     ],
     savedTab(),
     (key) => {
+      if (key === 'issues' && issuesPanel) onIssues?.(issuesPanel);
       try {
         localStorage.setItem(TAB_KEY, key);
       } catch {
@@ -77,6 +84,8 @@ export function mountDrawer(host: HTMLElement, onAction: (id: string, action: Pa
   issues.replaceChildren(
     empty('No issues yet', 'GitHub issues assigned to you show up here once a project has a linked repo.'),
   );
+  issuesPanel = issues;
+  if (savedTab() === 'issues') onIssues?.(issues);
 
   projects.addEventListener('click', (event) => {
     const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button[data-action]') : null;
