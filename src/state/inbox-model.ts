@@ -1,5 +1,5 @@
 import type { Idea } from '../data/projects.ts';
-import { staleness } from '../domain/staleness.ts';
+import { DEFAULT_STALE_THRESHOLDS, staleness, type StaleThresholds } from '../domain/staleness.ts';
 import type { StaleLevel } from '../ui/components/status.ts';
 import { relativeTime } from './overview-model.ts';
 
@@ -24,11 +24,15 @@ export interface InboxModel {
   staleCount: number;
 }
 
-export function buildInbox(ideas: readonly Idea[], now: Date): InboxModel {
+export function buildInbox(
+  ideas: readonly Idea[],
+  now: Date,
+  thresholds: StaleThresholds = DEFAULT_STALE_THRESHOLDS,
+): InboxModel {
   const items = [...ideas]
     .sort((a, b) => b.project.createdAt.localeCompare(a.project.createdAt))
     .map(({ project: p, criteria }): InboxItem => {
-      const s = staleness(p, now);
+      const s = staleness(p, now, thresholds);
       const captured = relativeTime(p.createdAt, now);
       return {
         id: p.id,

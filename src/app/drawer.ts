@@ -1,6 +1,7 @@
 import type { CriterionRecord, ProjectListing, ProjectsRepo } from '../data/projects.ts';
 import { explainGate } from '../domain/gates.ts';
 import { checkTransition, DEFAULT_WIP_CAP } from '../domain/lifecycle.ts';
+import { DEFAULT_STALE_THRESHOLDS } from '../domain/staleness.ts';
 import { buildCommitted, buildPanelProjects, type PanelAction } from '../state/drawer-model.ts';
 import type { ArchiveDetail } from '../ui/components/archive-dialog.ts';
 import type { EditDetail } from '../ui/components/edit-project-dialog.ts';
@@ -10,7 +11,7 @@ import { announceChange, onChange } from './changes.ts';
 import { saveError } from './errors.ts';
 import { saveSiteFields, siteSubjectFor, type SiteLoader } from './site-edit.ts';
 
-export type DrawerSource = Pick<ProjectsRepo, 'listProjects' | 'listCriteria' | 'loadWipCap' | 'update' | 'move' | 'archive'>;
+export type DrawerSource = Pick<ProjectsRepo, 'listProjects' | 'listCriteria' | 'loadWipCap' | 'loadStaleThresholds' | 'update' | 'move' | 'archive'>;
 
 export interface DrawerController {
   refresh(): Promise<void>;
@@ -33,7 +34,11 @@ export function showDrawer(
     const mine = ++generation;
     if (!loaded) screen.setLoading();
     try {
-      const [next, cap] = await Promise.all([repo.listProjects(), repo.loadWipCap().catch(() => wipCap)]);
+      const [next, cap, thresholds] = await Promise.all([
+        repo.listProjects(),
+        repo.loadWipCap().catch(() => wipCap),
+        repo.loadStaleThresholds().catch(() => DEFAULT_STALE_THRESHOLDS),
+      ]);
       const active = next.filter((l) => l.project.status === 'active');
       const lists = await Promise.all(active.map((l) => repo.listCriteria(l.project.id).catch((): CriterionRecord[] => [])));
       if (mine !== generation) return;
@@ -41,7 +46,7 @@ export function showDrawer(
       listings = next;
       wipCap = cap;
       loaded = true;
-      screen.show(buildCommitted(next, criteria, cap, now()), buildPanelProjects(next, now()));
+      screen.show(buildCommitted(next, criteria, cap, now(), thresholds), buildPanelProjects(next, now(), thresholds));
     } catch (error) {
       if (mine === generation) screen.setError(error instanceof Error ? error.message : String(error), () => void refresh());
     }

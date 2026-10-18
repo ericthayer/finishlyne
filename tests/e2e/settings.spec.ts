@@ -12,7 +12,7 @@ async function open(page: Page, query = ''): Promise<void> {
 }
 
 const cap = (page: Page) => page.getByLabel('Active projects at once');
-const status = (page: Page) => page.locator('.fl-settings__status');
+const status = (page: Page) => page.getByRole('region', { name: 'Work in progress' }).locator('.fl-settings__status');
 
 for (const theme of ['dark', 'light'] as const) {
   test(`Settings shows the WIP cap (${theme})`, async ({ page }) => {
@@ -28,14 +28,14 @@ for (const theme of ['dark', 'light'] as const) {
 test('saving a new cap says so', async ({ page }) => {
   await open(page);
   await cap(page).fill('5');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save cap' }).click();
   await expect(status(page)).toHaveText('Saved. Up to 5 projects can be Active at once.');
 });
 
 test('a cap outside 1 to 10 is refused and focused', async ({ page }) => {
   await open(page);
   await cap(page).fill('11');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save cap' }).click();
   await expect(cap(page)).toHaveAttribute('aria-invalid', 'true');
   await expect(cap(page)).toBeFocused();
   await expect(page.getByText('Use a whole number from 1 to 10.')).toBeVisible();
@@ -45,6 +45,55 @@ test('a cap outside 1 to 10 is refused and focused', async ({ page }) => {
 test('a failed save reports the reason', async ({ page }) => {
   await open(page, '?fail=settings');
   await cap(page).fill('4');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save cap' }).click();
   await expect(status(page)).toHaveText("That didn't save. Network down");
+});
+
+test('Settings shows your GitHub profile and the GitHub connection', async ({ page }) => {
+  await open(page);
+  await expect(page.getByRole('heading', { name: 'Eric Thayer', level: 2 })).toBeVisible();
+  await expect(page.getByText('@ericthayer')).toBeVisible();
+  await expect(page.getByText('Using Finishlyne since Oct 10, 2026 · last progress 2 days ago')).toBeVisible();
+  const link = page.getByRole('link', { name: 'GitHub profile' });
+  await expect(link).toHaveAttribute('href', 'https://github.com/ericthayer');
+  await expect(link).toHaveAttribute('target', '_blank');
+  await expect(page.locator('fl-kpi')).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Connections' }).getByText('Connected as ericthayer')).toBeVisible();
+});
+
+const stale = (page: Page) => page.getByRole('region', { name: 'Stale and cold' });
+
+test('stale thresholds show the defaults and save new ones', async ({ page }) => {
+  await open(page);
+  const active = stale(page).getByRole('group', { name: 'Active' });
+  await expect(active.getByLabel('Stale after')).toHaveValue('7');
+  await expect(active.getByLabel('Cold after')).toHaveValue('21');
+  await expect(stale(page).getByRole('group', { name: 'Idea' }).getByLabel('Stale after')).toHaveValue('30');
+  await active.getByLabel('Stale after').fill('5');
+  await page.getByRole('button', { name: 'Save thresholds' }).click();
+  await expect(stale(page).locator('.fl-settings__status')).toHaveText('Saved. Staleness now uses these day counts.');
+});
+
+test('cold before stale is refused and focused', async ({ page }) => {
+  await open(page);
+  const ready = stale(page).getByRole('group', { name: 'Ready' });
+  await ready.getByLabel('Cold after').fill('10');
+  await page.getByRole('button', { name: 'Save thresholds' }).click();
+  await expect(ready.getByLabel('Cold after')).toHaveAttribute('aria-invalid', 'true');
+  await expect(ready.getByLabel('Cold after')).toBeFocused();
+  await expect(stale(page).getByText('Cold has to come after stale.')).toBeVisible();
+  await axe(page);
+});
+
+test('without an avatar the initial stands in, and a missing App says so', async ({ page }) => {
+  await open(page, '?no-avatar&github=not-installed');
+  await expect(page.locator('span.fl-profile__avatar')).toHaveText('E');
+  await expect(page.getByText('App not installed')).toBeVisible();
+  await axe(page);
+});
+
+test('a GitHub check that fails does not block the page', async ({ page }) => {
+  await open(page, '?github=down');
+  await expect(page.getByText('Could not check')).toBeVisible();
+  await expect(cap(page)).toHaveValue('3');
 });

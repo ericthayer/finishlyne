@@ -1,7 +1,7 @@
 // One event for "projects changed", so the screen, the side panel and the shell stay in step
 // without knowing about each other. Each listener ignores changes it made itself.
 
-export type ChangeOrigin = 'projects' | 'inbox' | 'panel' | 'create' | 'capture' | 'github';
+export type ChangeOrigin = 'projects' | 'inbox' | 'panel' | 'create' | 'capture' | 'github' | 'settings';
 
 export interface ProjectsChange {
   origin: ChangeOrigin;

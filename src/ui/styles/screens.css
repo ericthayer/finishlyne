@@ -117,9 +117,31 @@ fl-inbox-list { display: block; }
 .fl-ship__note[data-invalid] { color: var(--danger); }
 
 /* Settings */
+.fl-settings__panel > .fl-panel__head { min-height: 0; }
+.fl-settings__intro { margin: 0; }
 .fl-settings__status { min-height: 1lh; margin: 0; }
 .fl-settings__form { display: grid; gap: var(--space-4); max-inline-size: 28rem; }
-.fl-settings__form .fl-btn { justify-self: start; }
+.fl-settings__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-4); }
+.fl-settings__actions .fl-settings__status { min-height: 0; color: var(--ink-muted); }
+.fl-settings__summary { display: grid; gap: var(--space-4); }
+.fl-settings__thresholds { display: grid; gap: var(--space-4); container-type: inline-size; }
+.fl-settings__groups { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+@container (min-width: 560px) { .fl-settings__groups { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (min-width: 1100px) { .fl-settings__groups { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.fl-settings__group { display: grid; align-content: start; gap: var(--space-3); min-width: 0; margin: 0; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.fl-settings__group legend { padding: 0 var(--space-1); font-weight: 600; }
+.fl-settings__summary:empty { display: none; }
+.fl-profile { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4) var(--space-6); }
+.fl-profile__avatar { flex: none; width: calc(var(--control-height) * 2); height: calc(var(--control-height) * 2); border-radius: var(--radius-md); object-fit: cover; }
+span.fl-profile__avatar { font-size: var(--text-title-size); }
+.fl-profile__who { display: grid; gap: var(--space-1); flex: 1 1 16rem; min-width: 0; }
+.fl-profile__who h2 { margin: 0; font: var(--text-title-weight) var(--text-title-size)/var(--text-title-leading) var(--font-sans); }
+.fl-profile__login { margin: 0; font-weight: 500; }
+.fl-profile__facts { margin: 0; color: var(--ink-muted); font: 400 var(--text-small-size)/var(--text-small-leading) var(--font-sans); }
+.fl-connections { display: grid; margin: 0; padding: 0; list-style: none; }
+.fl-connections__item { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+.fl-connections__name { font-weight: 500; }
+.fl-connections__status { flex: 1 1 auto; }
 
 /* ── Platform fields (create/edit project) ──────────────── */
 /* Selects match the text inputs in components.css; hidden fields really hide despite .fl-field's grid. */

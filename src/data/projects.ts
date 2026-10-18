@@ -1,6 +1,7 @@
 import { planCriteria } from '../domain/gates.ts';
 import { DEFAULT_WIP_CAP } from '../domain/lifecycle.ts';
 import { slugify, uniqueSlug } from '../domain/slug.ts';
+import { readStaleThresholds, type StaleThresholds } from '../domain/staleness.ts';
 import type { AgentPlatformId, PlatformLink, Project } from '../domain/types.ts';
 import type { Backend } from './client.ts';
 import { toProject, type ProjectRow } from './overview.ts';
@@ -90,6 +91,9 @@ export interface ProjectsRepo {
   /** How many projects can be Active at once. The default until the user saves one. */
   loadWipCap(): Promise<number>;
   saveWipCap(cap: number): Promise<void>;
+  /** Day counts for stale and cold (SPEC §6); the defaults until the user saves some. */
+  loadStaleThresholds(): Promise<StaleThresholds>;
+  saveStaleThresholds(t: StaleThresholds): Promise<void>;
 }
 
 /** Error from a write. `message` is the raw database text; gate codes are parsed by callers. */
@@ -288,6 +292,17 @@ export function supabaseProjects(backend: Backend): ProjectsRepo {
 
     async saveWipCap(cap) {
       const { error } = await db.from('user_settings').upsert({ wip_cap: cap }, { onConflict: 'user_id' });
+      if (error) fail(error);
+    },
+
+    async loadStaleThresholds() {
+      const { data, error } = await db.from('user_settings').select('stale_thresholds').maybeSingle();
+      if (error) fail(error);
+      return readStaleThresholds((data as { stale_thresholds: unknown } | null)?.stale_thresholds);
+    },
+
+    async saveStaleThresholds(t) {
+      const { error } = await db.from('user_settings').upsert({ stale_thresholds: t }, { onConflict: 'user_id' });
       if (error) fail(error);
     },
 

@@ -9,6 +9,7 @@ import { startRouter, type Route } from './app/router.ts';
 import { mountShell, type Shell } from './app/shell.ts';
 import { createBackend, readConfig, type Backend, type SupabaseConfig } from './data/client.ts';
 import { DEFAULT_WIP_CAP } from './domain/lifecycle.ts';
+import { DEFAULT_STALE_THRESHOLDS } from './domain/staleness.ts';
 import { loadOverview } from './data/overview.ts';
 import { supabaseProjects } from './data/projects.ts';
 import type { SiteSource } from './data/site.ts';
@@ -59,7 +60,11 @@ function start(root: HTMLElement, backend: Backend, config: SupabaseConfig): voi
       );
     }
     else if (route.name === 'settings') {
-      lazy(route, import('./app/settings.ts'), (m, s) => m.showSettings(s.main, repo));
+      lazy(
+        route,
+        Promise.all([import('./app/settings.ts'), import('./data/github.ts'), import('./data/profile.ts')]),
+        ([m, g, p], s) => m.showSettings(s.main, repo, { profile: () => p.loadProfile(backend), github: g.supabaseGitHub(backend) }),
+      );
     } else if (route.name === 'github') {
       lazy(route, Promise.all([import('./app/github.ts'), import('./data/github.ts')]), ([m, d], s) =>
         m.showGitHub(s.main, d.supabaseGitHub(backend), repo),
@@ -86,9 +91,12 @@ function start(root: HTMLElement, backend: Backend, config: SupabaseConfig): voi
     try {
       const data = await loadOverview(backend);
       if (current?.name !== 'overview') return;
-      const cap = await repo.loadWipCap().catch(() => DEFAULT_WIP_CAP);
+      const [cap, thresholds] = await Promise.all([
+        repo.loadWipCap().catch(() => DEFAULT_WIP_CAP),
+        repo.loadStaleThresholds().catch(() => DEFAULT_STALE_THRESHOLDS),
+      ]);
       if (current?.name !== 'overview') return;
-      renderOverview(s.main, buildOverview(data, new Date(), cap));
+      renderOverview(s.main, buildOverview(data, new Date(), cap, thresholds));
       if (data.projects.some((p) => p.status === 'active' && (p.siteUrl || p.netlifySiteId || p.screenshotPath))) {
         void Promise.all([import('./app/site-previews.ts'), loadSite()]).then(async ([m, site]) => {
           if (current?.name === 'overview') await m.decorateCards(s.main, data.projects, site);

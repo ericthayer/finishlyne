@@ -1,5 +1,5 @@
 import { platformName } from '../domain/brief.ts';
-import { staleness } from '../domain/staleness.ts';
+import { DEFAULT_STALE_THRESHOLDS, staleness, type StaleThresholds } from '../domain/staleness.ts';
 import type { ProjectStatus } from '../domain/types.ts';
 import type { CriterionRecord, ProjectListing } from '../data/projects.ts';
 
@@ -38,8 +38,8 @@ export interface PanelCard extends CardBase {
   actions: PanelAction[];
 }
 
-function base({ project: p, platform, repo }: ProjectListing, now: Date): CardBase {
-  const s = staleness(p, now);
+function base({ project: p, platform, repo }: ProjectListing, now: Date, t: StaleThresholds): CardBase {
+  const s = staleness(p, now, t);
   return {
     id: p.id,
     name: p.name,
@@ -74,6 +74,7 @@ export function buildCommitted(
   criteria: ReadonlyMap<string, readonly CriterionRecord[]>,
   cap: number,
   now: Date,
+  thresholds: StaleThresholds = DEFAULT_STALE_THRESHOLDS,
 ): CommittedView {
   const active = listings
     .filter((l) => l.project.status === 'active')
@@ -83,7 +84,7 @@ export function buildCommitted(
         a.project.statusChangedAt.localeCompare(b.project.statusChangedAt),
     );
   const cards = active.map((l, i): CommittedCard => {
-    const card = base(l, now);
+    const card = base(l, now, thresholds);
     return { ...card, lane: i + 1, nudge: nudge(card, criteria.get(card.id) ?? []) };
   });
   return { cap, used: cards.length, headline: headline(cards.length, cap), cards };
@@ -92,12 +93,16 @@ export function buildCommitted(
 const ORDER: Readonly<Record<ProjectStatus, number>> = { active: 0, paused: 1, ready: 2, idea: 3, shipped: 4, archived: 5 };
 
 /** Open projects, active first, each with the quick actions its status allows. */
-export function buildPanelProjects(listings: readonly ProjectListing[], now: Date): PanelCard[] {
+export function buildPanelProjects(
+  listings: readonly ProjectListing[],
+  now: Date,
+  thresholds: StaleThresholds = DEFAULT_STALE_THRESHOLDS,
+): PanelCard[] {
   return listings
     .filter((l) => ORDER[l.project.status] < ORDER.shipped)
     .sort((a, b) => ORDER[a.project.status] - ORDER[b.project.status] || a.project.name.localeCompare(b.project.name))
     .map((l): PanelCard => ({
-      ...base(l, now),
+      ...base(l, now, thresholds),
       actions: ['edit', ...(l.project.status === 'ready' ? (['start'] as const) : []), 'archive'],
     }));
 }
