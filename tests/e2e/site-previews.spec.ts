@@ -2,6 +2,8 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 async function axe(page: Page): Promise<void> {
+  // The page stays live beside the editor; keep a hovered row's tint out of the contrast check.
+  await page.mouse.move(0, 0);
   const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
 }
@@ -93,19 +95,52 @@ test('Edit from the side panel has the same site fields and saves them', async (
   expect(saved).toEqual([{ id: 'b', siteUrl: 'https://univia.help' }]);
 });
 
-test('the project editor fills most of the screen and lays the fields out in columns', async ({ page }) => {
+test('on wide screens Edit opens beside the list, keeps the page usable and puts it back on close', async ({ page }) => {
   await page.goto('/tests/e2e/fixtures/projects.html');
   await expect(page.locator('body[data-ready]')).toBeAttached();
   await page.getByRole('button', { name: 'Edit Univia' }).click();
   const form = dialog(page, 'Edit “Univia”');
-  const box = await form.boundingBox();
-  const viewport = page.viewportSize();
-  // 90% of the window, capped at 1400px on very wide screens.
-  expect(box?.width ?? 0).toBeGreaterThanOrEqual(Math.min((viewport?.width ?? 0) * 0.85, 1390));
-  const name = await form.getByRole('textbox', { name: 'Name' }).boundingBox();
-  const summary = await form.getByRole('textbox', { name: 'What is it? (optional)' }).boundingBox();
-  // Side by side, not stacked.
-  expect(Math.abs((name?.y ?? 0) - (summary?.y ?? 1))).toBeLessThan(4);
+  await expect(form).toHaveClass(/fl-dialog--side/);
+  const list = await page.locator('.fl-main__content').boundingBox();
+  const editor = await form.boundingBox();
+  // Side by side, list on the left.
+  expect((editor?.x ?? 0)).toBeGreaterThan((list?.x ?? 0) + (list?.width ?? 0) - 1);
+  expect(Math.abs((editor?.y ?? 0) - (list?.y ?? 1))).toBeLessThan(4);
+  await expect(form.getByRole('button', { name: 'Save changes' })).toBeInViewport();
+  // Non-modal: the list still takes clicks, and Edit on another row swaps the editor.
+  await page.getByRole('button', { name: 'Edit DevLog' }).click();
+  await expect(dialog(page, 'Edit “DevLog”')).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(1);
+  await axe(page);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('.fl-main__split')).toHaveCount(0);
+});
+
+test('Edit from the side panel opens beside the page too, and only one editor shows', async ({ page }) => {
+  await page.goto('/tests/e2e/fixtures/projects.html?drawer');
+  await expect(page.locator('body[data-ready]')).toBeAttached();
+  await page.getByRole('button', { name: 'Edit DevLog' }).first().click();
+  const panel = page.locator('.fl-drawer__inner');
+  await panel.getByRole('tab', { name: 'Projects' }).click();
+  await panel.getByRole('button', { name: 'Edit Univia' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(1);
+  await expect(page.locator('.fl-main__split').getByRole('dialog', { name: 'Edit “Univia”' })).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.locator('.fl-main__split')).toHaveCount(0);
+  // Back home, it still opens.
+  await panel.getByRole('button', { name: 'Edit Univia' }).click();
+  await expect(dialog(page, 'Edit “Univia”')).toBeVisible();
+});
+
+test('below 900px Edit is a modal with the fields stacked', async ({ page }) => {
+  await page.setViewportSize({ width: 820, height: 900 });
+  await page.goto('/tests/e2e/fixtures/projects.html');
+  await expect(page.locator('body[data-ready]')).toBeAttached();
+  await page.getByRole('button', { name: 'Edit Univia' }).click();
+  const form = dialog(page, 'Edit “Univia”');
+  await expect(form).toHaveClass(/fl-dialog--wide/);
+  await expect(page.locator('.fl-main__split')).toHaveCount(0);
   await expect(form.getByRole('button', { name: 'Save changes' })).toBeInViewport();
   await axe(page);
 });

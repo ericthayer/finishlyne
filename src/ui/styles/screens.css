@@ -433,3 +433,11 @@ fl-inbox-list { display: block; }
 }
 .fl-dialog--wide form > :is(h2, .fl-dialog__intro, .fl-dialog__alert, .fl-dialog__actions) { grid-column: 1 / -1; }
 .fl-dialog--wide .fl-dialog__actions { position: sticky; bottom: calc(var(--space-6) * -1); padding-block: var(--space-4); background: var(--surface-raised); }
+
+/* ── Side editor (≥900px): the page and the editor share main as two columns ── */
+.fl-main__split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(15rem, 35cqw); gap: clamp(1rem, 4cqw, 2.5rem); align-items: start; }
+.fl-main__content { display: grid; align-content: start; gap: var(--space-6); min-width: 0; }
+.fl-dialog--side { position: sticky; top: 0; inset: auto; margin: 0; width: auto; max-width: none; height: var(--fl-side-height, calc(100dvh - 2 * var(--space-6))); max-height: none; overflow: hidden; display: grid; grid-template-rows: minmax(0, 1fr); box-shadow: none; }
+.fl-dialog--side:not([open]) { display: none; }
+.fl-dialog--side form { box-sizing: border-box; min-height: 0; overflow-y: auto; }
+.fl-dialog--side .fl-dialog__actions { position: sticky; bottom: calc(var(--space-6) * -1); padding-block: var(--space-4); background: var(--surface-raised); }
