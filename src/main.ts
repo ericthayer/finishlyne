@@ -7,10 +7,11 @@ import { bindCaptureShortcut, wireCapture } from './app/capture.ts';
 import { announceChange, onChange } from './app/changes.ts';
 import { startRouter, type Route } from './app/router.ts';
 import { mountShell, type Shell } from './app/shell.ts';
-import { createBackend, readConfig, type Backend } from './data/client.ts';
+import { createBackend, readConfig, type Backend, type SupabaseConfig } from './data/client.ts';
 import { DEFAULT_WIP_CAP } from './domain/lifecycle.ts';
 import { loadOverview } from './data/overview.ts';
 import { supabaseProjects } from './data/projects.ts';
+import type { SiteSource } from './data/site.ts';
 import { signInWithGitHub, signOut, watchSession } from './data/session.ts';
 import { buildOverview } from './state/overview-model.ts';
 import { renderOverview, renderOverviewError, renderOverviewLoading } from './ui/screens/overview.ts';
@@ -24,11 +25,17 @@ const config = readConfig();
 if (!config) {
   renderSignIn(host, async () => 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.');
 } else {
-  start(host, createBackend(config));
+  start(host, createBackend(config), config);
 }
 
-function start(root: HTMLElement, backend: Backend): void {
+function start(root: HTMLElement, backend: Backend, config: SupabaseConfig): void {
   const repo = supabaseProjects(backend);
+  // Site previews (Netlify data, screenshots) load on first use.
+  let siteSource: SiteSource | null = null;
+  const loadSite = async (): Promise<SiteSource> => {
+    siteSource ??= (await import('./data/site.ts')).supabaseSite(backend, config);
+    return siteSource;
+  };
   let shell: Shell | null = null;
   let current: Route | null = null;
   let routerStarted = false;
@@ -44,7 +51,7 @@ function start(root: HTMLElement, backend: Backend): void {
     else if (route.name === 'inbox') lazy(route, import('./app/inbox.ts'), (m, s) => m.showInbox(s.main, repo));
     else if (route.name === 'projects') {
       const q = new URLSearchParams(location.search).get('q') ?? '';
-      lazy(route, import('./app/projects.ts'), (m, s) => m.showProjects(s.main, repo, q, s.claimSearch));
+      lazy(route, import('./app/projects.ts'), (m, s) => m.showProjects(s.main, repo, q, s.claimSearch, undefined, loadSite));
     } else if (route.name === 'archive') lazy(route, import('./app/archive.ts'), (m, s) => m.showArchive(s.main, repo));
     else if (route.name === 'activity') {
       lazy(route, Promise.all([import('./app/activity.ts'), import('./data/activity.ts')]), ([m, d], s) =>
@@ -82,6 +89,11 @@ function start(root: HTMLElement, backend: Backend): void {
       const cap = await repo.loadWipCap().catch(() => DEFAULT_WIP_CAP);
       if (current?.name !== 'overview') return;
       renderOverview(s.main, buildOverview(data, new Date(), cap));
+      if (data.projects.some((p) => p.status === 'active' && (p.siteUrl || p.netlifySiteId || p.screenshotPath))) {
+        void Promise.all([import('./app/site-previews.ts'), loadSite()]).then(async ([m, site]) => {
+          if (current?.name === 'overview') await m.decorateCards(s.main, data.projects, site);
+        });
+      }
     } catch (error) {
       renderOverviewError(s.main, error instanceof Error ? error.message : String(error), () => void showOverview(s));
     }

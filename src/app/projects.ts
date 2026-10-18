@@ -1,4 +1,5 @@
 import type { ProjectListing, ProjectsRepo } from '../data/projects.ts';
+import type { SiteSource } from '../data/site.ts';
 import { explainGate } from '../domain/gates.ts';
 import { checkTransition, defaultReviewOn, DEFAULT_WIP_CAP } from '../domain/lifecycle.ts';
 import {
@@ -27,13 +28,20 @@ export type ProjectsSource = Pick<ProjectsRepo, 'listProjects' | 'update' | 'mov
 /** The header search, claimed by this screen so it filters in place. */
 export type ClaimSearch = (onQuery: (query: string) => void, initial: string) => void;
 
-/** Mounts the Projects list into `main`. `initialQuery` comes from the header search (`?q=`). */
+/** Loads the site preview client on first use. */
+export type SiteLoader = () => Promise<SiteSource>;
+
+/**
+ * Mounts the Projects list into `main`. `initialQuery` comes from the header search (`?q=`).
+ * With `site`, Edit also sets the project's site URL, Netlify site and screenshot.
+ */
 export function showProjects(
   main: HTMLElement,
   repo: ProjectsSource,
   initialQuery: string,
   claimSearch: ClaimSearch,
   now: () => Date = () => new Date(),
+  site: SiteLoader | null = null,
 ): ProjectsController {
   let filter: ProjectFilter = { query: initialQuery, statuses: DEFAULT_STATUSES };
   let listings: ProjectListing[] = [];
@@ -101,6 +109,14 @@ export function showProjects(
             outcome: project.outcome ?? '',
             nextAction: project.nextAction ?? '',
             platform: listing.platform,
+            ...(site && {
+              site: {
+                siteUrl: project.siteUrl ?? '',
+                netlifySiteId: project.netlifySiteId ?? '',
+                hasScreenshot: project.screenshotPath !== null,
+                netlifySites: site().then((s) => s.netlifySites()),
+              },
+            }),
           }),
         );
       } else if (action === 'start' || action === 'resume') {
@@ -165,8 +181,13 @@ export function showProjects(
   const nameOf = (id: string): string => find(id)?.project.name ?? 'Project';
 
   screen.edit.addEventListener('fl-project-edit-submit', (event) => {
-    const { id, ...input } = (event as CustomEvent<EditDetail>).detail;
-    repo.update(id, input).then(
+    const { id, site: siteChange, ...input } = (event as CustomEvent<EditDetail>).detail;
+    const before = find(id)?.project;
+    const saveSite = async (): Promise<void> => {
+      if (!site || !siteChange || !before) return;
+      await (await site()).save(before, siteChange);
+    };
+    repo.update(id, input).then(saveSite).then(
       () => {
         screen.edit.close();
         void settle(`“${input.name}” saved.`);

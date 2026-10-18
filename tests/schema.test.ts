@@ -27,6 +27,27 @@ const SUPABASE_AUTH_STUB = `
   alter default privileges in schema public grant all on functions to anon, authenticated;
 `;
 
+// The slice of Supabase Storage the migrations touch: buckets, objects (RLS on) and foldername().
+const SUPABASE_STORAGE_STUB = `
+  create schema storage;
+  create table storage.buckets (
+    id text primary key, name text not null, public boolean default false,
+    file_size_limit bigint, allowed_mime_types text[]
+  );
+  create table storage.objects (
+    id uuid primary key default gen_random_uuid(),
+    bucket_id text references storage.buckets (id),
+    name text not null,
+    owner uuid default auth.uid()
+  );
+  alter table storage.objects enable row level security;
+  create function storage.foldername(name text) returns text[] language sql immutable as $$
+    select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1]
+  $$;
+  grant usage on schema storage to authenticated, anon;
+  grant all on storage.objects to authenticated;
+`;
+
 const ALICE = '00000000-0000-0000-0000-00000000000a';
 const BOB = '00000000-0000-0000-0000-00000000000b';
 
@@ -75,6 +96,7 @@ async function readyProject(uid: string, slug: string): Promise<string> {
 beforeAll(async () => {
   db = new PGlite();
   await db.exec(SUPABASE_AUTH_STUB);
+  await db.exec(SUPABASE_STORAGE_STUB);
   await db.exec(MIGRATION);
   await db.query(`insert into auth.users (id) values ($1), ($2)`, [ALICE, BOB]);
 });
@@ -301,5 +323,38 @@ describe('set_current_platform', () => {
     await expect(as('', () => db.exec(`set role anon; select public.set_current_platform(gen_random_uuid(), 'codex')`))).rejects.toThrow(
       /permission denied/,
     );
+  });
+});
+
+describe('site previews', () => {
+  it('takes an https site, a Netlify site id and a screenshot in the owner folder only', async () => {
+    const id = await createProject(ALICE, 'with-site');
+    await as(ALICE, () =>
+      db.query(`update public.projects set site_url = 'https://a.dev', netlify_site_id = $2, screenshot_path = $3 where id = $1`, [
+        id,
+        '52a9fbd8-0883-43f0-b2f6-6d1145e12ddb',
+        `${ALICE}/${id}/1`,
+      ]),
+    );
+    await expect(as(ALICE, () => db.query(`update public.projects set site_url = 'http://a.dev' where id = $1`, [id]))).rejects.toThrow(
+      /check constraint/,
+    );
+    await expect(
+      as(ALICE, () => db.query(`update public.projects set screenshot_path = $2 where id = $1`, [id, `${BOB}/${id}/1`])),
+    ).rejects.toThrow(/screenshot_in_owner_folder/);
+  });
+
+  it("keeps each user's screenshots in their own folder", async () => {
+    const mine = `${ALICE}/p/1`;
+    await as(ALICE, () => db.query(`insert into storage.objects (bucket_id, name) values ('project-screenshots', $1)`, [mine]));
+    await expect(
+      as(ALICE, () => db.query(`insert into storage.objects (bucket_id, name) values ('project-screenshots', $1)`, [`${BOB}/p/1`])),
+    ).rejects.toThrow(/row-level security/);
+    const seenByBob = await as(BOB, () => db.query(`select name from storage.objects where name = $1`, [mine]));
+    expect(seenByBob.rows).toHaveLength(0);
+    const deletedByBob = await as(BOB, () => db.query(`delete from storage.objects where name = $1`, [mine]));
+    expect(deletedByBob.affectedRows).toBe(0);
+    const bucket = await db.query<{ public: boolean }>(`select public from storage.buckets where id = 'project-screenshots'`);
+    expect(bucket.rows[0]?.public).toBe(false);
   });
 });
