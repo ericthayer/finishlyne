@@ -47,13 +47,14 @@ describe('toProjectRows', () => {
   it('sorts by name and labels platform and repo', () => {
     const rows = toProjectRows(all, now);
     expect(rows.map((r) => r.name)).toEqual(['DevLog', 'Old idea', 'Portfolio v3', 'Stacker', 'Univia']);
-    expect(rows[0]).toMatchObject({ key: 'ericthayer/devlog', platform: 'Claude Code', href: '/p/devlog' });
+    expect(rows[0]).toMatchObject({ key: 'ericthayer/devlog', platform: 'Claude Code', platformId: 'claude_code', href: '/p/devlog' });
   });
 
   it('falls back to the slug when there is no repo, and omits an absent platform', () => {
     const univia = toProjectRows(all, now).find((r) => r.name === 'Univia');
     expect(univia).toMatchObject({ key: 'univia', href: '/p/univia', status: 'ready', stale: { level: 'fresh', days: 9 } });
     expect(univia).not.toHaveProperty('platform');
+    expect(univia).not.toHaveProperty('platformId');
   });
 
   it('marks paused projects past their review date', () => {

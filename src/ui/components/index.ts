@@ -6,6 +6,7 @@ export * from './kpi.ts';
 export * from './lanes.ts';
 export * from './charts.ts';
 export * from './table.ts';
+export * from './agent-mark.ts';
 export * from './theme-toggle.ts';
 export * from './capture-form.ts';
 export * from './capture-dialog.ts';
