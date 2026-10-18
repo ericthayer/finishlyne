@@ -419,3 +419,25 @@ fl-inbox-list { display: block; }
 .fl-github__name { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0; }
 .fl-github__pick { grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--space-3); }
 @container main (max-width: 640px) { .fl-github__repo { grid-template-columns: minmax(0, 1fr); } }
+
+/* ── Project editor: most of the viewport, fields in columns, actions stay in view when it scrolls ── */
+.fl-dialog--wide { width: min(90vw, 1400px); max-width: none; height: min(90dvh, 960px); max-height: 90dvh; overflow: hidden; }
+.fl-dialog--wide form {
+  box-sizing: border-box;
+  height: 100%;
+  overflow-y: auto;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  align-items: start;
+  align-content: start;
+  column-gap: var(--space-6);
+}
+.fl-dialog--wide form > :is(h2, .fl-dialog__intro, .fl-dialog__alert, .fl-dialog__actions) { grid-column: 1 / -1; }
+.fl-dialog--wide .fl-dialog__actions { position: sticky; bottom: calc(var(--space-6) * -1); padding-block: var(--space-4); background: var(--surface-raised); }
+
+/* ── Side editor (≥900px): the page and the editor share main as two columns ── */
+.fl-main__split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(15rem, 35cqw); gap: clamp(1rem, 4cqw, 2.5rem); align-items: start; }
+.fl-main__content { display: grid; align-content: start; gap: var(--space-6); min-width: 0; }
+.fl-dialog--side { position: sticky; top: 0; inset: auto; margin: 0; width: auto; max-width: none; height: var(--fl-side-height, calc(100dvh - 2 * var(--space-6))); max-height: none; overflow: hidden; display: grid; grid-template-rows: minmax(0, 1fr); box-shadow: none; }
+.fl-dialog--side:not([open]) { display: none; }
+.fl-dialog--side form { box-sizing: border-box; min-height: 0; overflow-y: auto; }
+.fl-dialog--side .fl-dialog__actions { position: sticky; bottom: calc(var(--space-6) * -1); padding-block: var(--space-4); background: var(--surface-raised); }

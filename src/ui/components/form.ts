@@ -1,4 +1,5 @@
 import { el, emit, uid } from './dom.ts';
+import { enterSideColumn, leaveSideColumn, sideColumnMain } from './side-column.ts';
 
 // Shared pieces for form dialogs. Errors replace the help text, so each field has one description.
 
@@ -78,6 +79,10 @@ function wrapField<C extends FieldControl>(control: C, o: Pick<FieldOptions, 'na
 }
 
 export interface DialogContent {
+  /** `wide` fills most of the viewport, with the fields in columns. */
+  size?: 'wide';
+  /** `side` opens beside the page on wide screens, non-modal; smaller screens get the modal. */
+  placement?: 'side';
   title: string;
   intro?: string;
   fields: readonly Field<FieldControl>[];
@@ -86,7 +91,7 @@ export interface DialogContent {
 }
 
 /**
- * Modal form that stays open while the caller saves. Subclasses build the content and
+ * Form dialog that stays open while the caller saves; modal unless `placement: 'side'` fits. Subclasses build the content and
  * validate; the base fires `eventName` with the collected detail and waits for
  * `.close()` (saved) or `.fail(message)` (server said no).
  */
@@ -135,14 +140,30 @@ export abstract class FormDialog<T> extends HTMLElement {
       emit<T>(this, this.eventName, detail);
     });
 
-    const dialog = el('dialog', 'fl-dialog');
+    const main = content.placement === 'side' ? sideColumnMain() : null;
+    const variant = main ? ' fl-dialog--side' : content.size === 'wide' ? ' fl-dialog--wide' : '';
+    const dialog = el('dialog', `fl-dialog${variant}`);
     dialog.setAttribute('aria-labelledby', title.id);
     dialog.append(form);
+    dialog.addEventListener('close', () => {
+      if (this.#dialog === dialog) leaveSideColumn(this);
+    });
+    this.#dialog?.close();
     this.#dialog = dialog;
     this.#submit = submit;
     this.#alert = alert;
     this.replaceChildren(dialog);
-    dialog.showModal();
+    if (main) {
+      // Non-modal: Escape is not built in, so close on it here.
+      dialog.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !event.defaultPrevented) this.close();
+      });
+      enterSideColumn(main, this, (other) => (other as FormDialog<unknown>).close());
+      dialog.show();
+    } else {
+      leaveSideColumn(this);
+      dialog.showModal();
+    }
     content.fields[0]?.control.focus();
   }
 

@@ -7,6 +7,7 @@ import type { ProjectListing, ProjectsRepo } from '../../../src/data/projects.ts
 import { fixtureShell } from './shell.ts';
 import { showProjects } from '../../../src/app/projects.ts';
 import { project } from '../../fixtures.ts';
+import { memorySite } from './memory-site.ts';
 import type { CaptureInput, CriterionRecord, EditInput, MoveInput, ShipInput } from '../../../src/data/projects.ts';
 
 const parsed = new DOMParser().parseFromString(indexHtml, 'text/html');
@@ -105,10 +106,25 @@ const repo: Pick<ProjectsRepo, 'listProjects' | 'capture' | 'update' | 'move' | 
   },
 };
 
+// ?netlify=off answers like a server with no Netlify token.
+const site = memorySite(
+  { netlify: 'connected', projects: {} },
+  params.get('netlify') === 'off'
+    ? { netlify: 'not-configured', sites: [] }
+    : {
+        netlify: 'connected',
+        sites: [
+          { id: '00000000-0000-4000-8000-000000000001', name: 'devlog', url: 'https://devlog.netlify.app' },
+          { id: '00000000-0000-4000-8000-000000000002', name: 'univia', url: 'https://univia.help' },
+        ],
+      },
+);
+(window as unknown as { fixtureSite: typeof site }).fixtureSite = site;
+
 const host = document.getElementById('app');
 if (host) {
-  const shell = fixtureShell(host, 'projects', { capture: repo.capture, drawer: repo });
-  void showProjects(shell.main, repo, params.get('q') ?? '', shell.claimSearch, () => new Date('2026-10-10T12:00:00Z')).refresh().then(() => {
+  const shell = fixtureShell(host, 'projects', { capture: repo.capture, drawer: repo, site: async () => site });
+  void showProjects(shell.main, repo, params.get('q') ?? '', shell.claimSearch, () => new Date('2026-10-10T12:00:00Z'), async () => site).refresh().then(() => {
     document.body.dataset['ready'] = 'true';
   });
 }
