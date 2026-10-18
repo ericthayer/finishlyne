@@ -150,6 +150,8 @@ fl-inbox-list { display: block; }
 
 /* ── Account menu (avatar popover) ──────────────────────── */
 .fl-avatar--button { border: 0; padding: 0; cursor: pointer; }
+/* Light theme's ready colour is a deep teal, so the initial turns white to keep 4.5:1. */
+[data-theme="light"] .fl-avatar { color: var(--on-brand); }
 .fl-avatar--button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .fl-account {
   position: fixed;
@@ -206,7 +208,7 @@ fl-inbox-list { display: block; }
 .fl-commit__nudge[data-level="cold"] { color: var(--ink); }
 .fl-commit__nudge[data-level="cold"] fl-icon { color: var(--danger); }
 .fl-drawer__project { display: grid; gap: var(--space-1); min-width: 0; }
-/* The yellow stripe marks committed lanes only, so open-project cards drop it. */
+/* The signal stripe marks committed lanes only, so open-project cards drop it. */
 .fl-drawer__project .fl-card::before { display: none; }
 .fl-drawer__project .fl-card { padding-left: var(--space-4); }
 .fl-drawer__actions { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); }
